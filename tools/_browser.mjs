@@ -1,8 +1,8 @@
 // tools/_browser.mjs — shared headless-Chromium helper for stills.mjs and render.mjs.
 //   const { browser, page, info, close } = await openFilm({ film: 'anor', scale: 0.5, quality: 'final' });
 //   const png = await grab(page, t);   // Buffer (PNG) of exactly time t
-// Uses SwiftShader WebGL when there is no GPU (cloud containers). Playwright is pinned to 1.58.2; if its own
-// browser build is missing we fall back to the pre-installed Chromium at /opt/pw-browsers/chromium.
+// Uses the GPU on macOS (Metal) / Windows and SwiftShader on GPU-less Linux (cloud). Playwright is pinned to 1.58.2
+// (install its browser once with `npx playwright install chromium`); on Linux we fall back to /opt/pw-browsers/chromium.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import { startServer } from './serve.mjs';
@@ -18,12 +18,21 @@ export function parseArgs(argv = process.argv.slice(2)) {
   return a;
 }
 
+/** GPU flags per platform: Metal on macOS, the real GPU on Windows, SwiftShader on GPU-less Linux (cloud).
+ *  Override with VS_GL=swiftshader|gpu. HEADED=1 opens a visible window (guaranteed GPU on any desktop). */
+function glArgs() {
+  const mode = process.env.VS_GL || (process.platform === 'linux' ? 'swiftshader' : 'gpu');
+  if (mode === 'swiftshader') return ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu-sandbox'];
+  return process.platform === 'darwin' ? ['--use-angle=metal', '--enable-gpu'] : ['--enable-gpu'];
+}
+
 export async function launch() {
-  const args = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-sandbox', '--autoplay-policy=no-user-gesture-required'];
-  try { return await chromium.launch({ args }); } catch (e) {
+  const args = [...glArgs(), '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'];
+  const headless = !process.env.HEADED;
+  try { return await chromium.launch({ args, headless }); } catch (e) {
     const fallback = process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium';
     if (!fs.existsSync(fallback)) throw e;
-    return chromium.launch({ executablePath: fallback, args });
+    return chromium.launch({ executablePath: fallback, args, headless });
   }
 }
 

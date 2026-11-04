@@ -12,7 +12,8 @@
     "stills": "node tools/stills.mjs",
     "render": "node tools/render.mjs",
     "parts-doc": "node tools/parts-doc.mjs",
-    "probe": "node tools/probe.mjs"
+    "probe": "node tools/probe.mjs",
+    "setup": "playwright install chromium"
   },
   "dependencies": {
     "@fontsource/nunito": "5.2.7",
