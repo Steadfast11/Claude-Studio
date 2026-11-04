@@ -1,0 +1,51 @@
+{
+  "_doc": "Words/synonyms (en/uz/ru) -> existing part ids. engine/resolve.js: exact id -> part word -> category word -> fuzzy -> kind default. caps: what a part can do in a beat.",
+  "defaults": { "character": "pista", "prop": "non", "mover": "anor", "set": "uzbek-room", "light": "golden-hour", "music": "lazgi-chase" },
+  "caps": {
+    "pista": "actor", "anor": "mover", "piyola": "rockable", "choynak": "rockable",
+    "kosa": "static", "non": "static", "lagan-plov": "static", "qoshiq": "static",
+    "dasturxon": "dressing", "kurpacha": "dressing"
+  },
+  "parts": {
+    "pista": ["pista", "hero", "creature", "pistachio", "pistachio creature", "qahramon", "jonivor", "maxluq", "герой", "существо", "фисташка"],
+    "anor": ["anor", "pomegranate", "garnet", "ball", "fruit", "berry", "apple", "orange", "olma", "meva", "to'p", "top", "гранат", "яблоко", "мяч", "фрукт", "шар", "апельсин", "apelsin"],
+    "kosa": ["kosa", "bowl", "basin", "vase", "pot", "kasa", "миска", "чаша", "пиала большая", "ваза"],
+    "piyola": ["piyola", "cup", "mug", "glass", "teacup", "finjon", "stakan", "chashka", "пиала", "чашка", "кружка", "стакан"],
+    "choynak": ["choynak", "teapot", "kettle", "jug", "pitcher", "samovar", "чайник", "кувшин", "самовар", "ko'za", "koza"],
+    "non": ["non", "bread", "flatbread", "loaf", "cake", "pie", "cookie", "lepyoshka", "лепёшка", "лепешка", "хлеб", "пирог", "торт", "patir", "somsa", "pizza", "pancake"],
+    "lagan-plov": ["lagan-plov", "plov", "pilaf", "osh", "palov", "lagan", "platter", "dish", "meal", "food", "rice", "dinner", "lunch", "плов", "блюдо", "еда", "ужин", "taom", "ovqat"],
+    "qoshiq": ["qoshiq", "spoon", "fork", "knife", "ladle", "chopstick", "cutlery", "pen", "pencil", "stick", "ложка", "вилка", "нож", "палочка", "qoshiq", "vilka", "pichoq"],
+    "dasturxon": ["dasturxon", "tablecloth", "cloth", "скатерть"],
+    "kurpacha": ["kurpacha", "mattress", "cushion", "pillow", "rug", "carpet", "blanket", "курпача", "подушка", "ковёр", "одеяло", "gilam", "yostiq"],
+    "uzbek-room": ["uzbek-room", "room", "home", "house", "kitchen", "dining room", "tea house", "teahouse", "choyxona", "uy", "xona", "oshxona", "mehmonxona", "комната", "дом", "кухня", "чайхана", "village", "qishloq", "деревня", "bazaar", "bozor", "базар", "garden", "bog'", "сад", "yard", "hovli", "двор"],
+    "studio": ["studio", "table", "desk", "office", "lab", "laboratory", "school", "classroom", "shop", "cafe", "stol", "maktab", "студия", "стол", "офис", "школа", "лаборатория", "кафе", "city", "shahar", "город", "space", "kosmos", "космос", "stage", "sahna", "сцена"],
+    "golden-hour": ["golden-hour", "sunset", "evening", "dusk", "sunrise", "morning", "day", "sunny", "summer", "warm", "kech", "oqshom", "tong", "ertalab", "kunduz", "quyosh", "yoz", "закат", "вечер", "утро", "день", "солнце", "лето"],
+    "night-lamp": ["night-lamp", "night", "midnight", "dark", "lamp", "candle", "moon", "stars", "spooky", "tun", "kecha", "yarim tun", "chiroq", "sham", "oy", "ночь", "тьма", "лампа", "свеча", "луна", "полночь"],
+    "overcast": ["overcast", "cloudy", "rain", "rainy", "storm", "grey", "gray", "winter", "snow", "autumn", "fog", "bulutli", "yomg'ir", "qish", "qor", "kuz", "tuman", "пасмурно", "дождь", "зима", "снег", "осень", "туман", "гроза"],
+    "lazgi-chase": ["lazgi-chase", "lazgi", "chase music", "folk", "dutar", "doira", "лазги", "dance", "raqs", "танец"]
+  },
+  "categories": {
+    "character": { "default": "pista", "words": ["cat", "kitten", "dog", "puppy", "mouse", "rabbit", "bunny", "fox", "bear", "bird", "owl", "frog", "monkey", "lion", "tiger", "panda", "hamster", "squirrel", "turtle", "duck", "chick", "robot", "alien", "monster", "dragon", "ghost", "boy", "girl", "kid", "child", "man", "woman", "grandma", "grandpa", "chef", "cook", "king", "princess", "wizard", "knight", "pirate", "ninja", "friend", "baby", "student", "teacher", "mushuk", "it", "kuchuk", "sichqon", "quyon", "tulki", "ayiq", "qush", "baqa", "maymun", "sher", "yo'lbars", "ajdar", "robot", "bola", "qiz", "o'g'il", "buvi", "bobo", "oshpaz", "podshoh", "malika", "do'st", "кот", "кошка", "котёнок", "собака", "щенок", "мышь", "заяц", "кролик", "лиса", "медведь", "птица", "сова", "лягушка", "обезьяна", "лев", "тигр", "панда", "робот", "дракон", "мальчик", "девочка", "ребёнок", "бабушка", "дедушка", "повар", "король", "принцесса", "друг"] },
+    "mover": { "default": "anor", "words": ["melon", "watermelon", "peach", "plum", "grape", "cherry", "lemon", "tomato", "egg", "coin", "marble", "balloon", "nut", "walnut", "potato", "onion", "pumpkin", "toy", "star", "gem", "diamond", "treasure", "jewel", "pearl", "gold", "qovun", "tarvuz", "shaftoli", "olcha", "uzum", "pomidor", "tuxum", "tanga", "yong'oq", "kartoshka", "piyoz", "qovoq", "o'yinchoq", "yulduz", "xazina", "дыня", "арбуз", "персик", "вишня", "виноград", "лимон", "помидор", "яйцо", "монета", "шарик", "орех", "картошка", "лук", "тыква", "игрушка", "звезда", "сокровище", "клад", "жемчуг", "золото"] },
+    "rockable": { "default": "piyola", "words": ["bottle", "jar", "can", "bucket", "tea", "coffee", "milk", "juice", "water", "drink", "vessel", "flask", "choy", "qahva", "sut", "suv", "sharbat", "shisha", "banka", "чай", "кофе", "молоко", "сок", "вода", "бутылка", "банка", "ведро", "напиток"] },
+    "static": { "default": "non", "words": ["box", "book", "plate", "tray", "basket", "candy", "sweets", "honey", "jam", "cheese", "salad", "soup", "noodle", "dumpling", "manti", "samsa", "lagmon", "shashlik", "kebab", "sandwich", "burger", "rock", "stone", "block", "brick", "present", "gift", "letter", "hat", "shoe", "sovg'a", "kitob", "likopcha", "savat", "konfet", "asal", "murabbo", "sho'rva", "manti", "tosh", "quti", "коробка", "книга", "тарелка", "корзина", "конфета", "мёд", "варенье", "суп", "салат", "пельмени", "манты", "шашлык", "камень", "подарок", "письмо", "шапка"] }
+  },
+  "beats": {
+    "establish": ["establish", "intro", "open", "opening", "start", "begin", "wake", "arrive", "boshlanish", "kirish", "начало", "вступление"],
+    "discover": ["discover", "find", "see", "notice", "spot", "look", "meet", "smell", "topmoq", "ko'rmoq", "uchratmoq", "найти", "увидеть", "заметить", "встретить"],
+    "chase": ["chase", "chases", "run", "runs", "race", "races", "follow", "follows", "hunt", "hunts", "roll", "rolls", "escape", "flee", "quvmoq", "quvadi", "yugurmoq", "yuguradi", "qochadi", "gonyaetsya", "гоняется", "бежит", "догоняет", "убегает", "катится", "погоня"],
+    "bonk": ["bonk", "bump", "bumps", "crash", "crashes", "hit", "hits", "trip", "trips", "fall", "falls", "slip", "slips", "stumble", "urilmoq", "uriladi", "yiqiladi", "toyiladi", "удар", "ударяется", "падает", "спотыкается", "врезается"],
+    "catch": ["catch", "catches", "grab", "grabs", "get", "gets", "take", "takes", "save", "saves", "hug", "hugs", "rescue", "ushlamoq", "ushlaydi", "oladi", "quchoqlaydi", "qutqaradi", "ловит", "поймал", "хватает", "спасает", "обнимает"],
+    "celebrate": ["celebrate", "celebrates", "win", "wins", "dance", "dances", "party", "cheer", "laugh", "eat", "eats", "share", "shares", "birthday", "festival", "holiday", "bayram", "nishonlaydi", "raqs", "kuladi", "yeydi", "tug'ilgan kun", "праздник", "празднует", "танцует", "смеётся", "ест", "делится", "побеждает"],
+    "sad": ["sad", "cry", "cries", "lose", "loses", "lost", "miss", "misses", "lonely", "alone", "sleep", "sleeps", "tired", "rest", "yig'laydi", "yo'qotadi", "g'amgin", "yolg'iz", "uxlaydi", "charchagan", "грустит", "плачет", "теряет", "один", "спит", "устал"],
+    "title": ["title", "end", "ending", "finale", "credits", "oxir", "yakun", "конец", "финал"]
+  },
+  "moods": {
+    "happy": ["happy", "joy", "joyful", "fun", "funny", "cheerful", "bright", "xursand", "quvnoq", "kulgili", "весёлый", "радостный", "смешной"],
+    "playful": ["playful", "silly", "cute", "naughty", "sheroz", "o'ynoqi", "игривый", "милый", "озорной"],
+    "tense": ["tense", "scary", "spooky", "danger", "dangerous", "chase", "thriller", "qo'rqinchli", "xavfli", "страшный", "опасный", "напряжённый"],
+    "sad": ["sad", "lonely", "melancholy", "tragic", "g'amgin", "qayg'uli", "грустный", "печальный"],
+    "calm": ["calm", "quiet", "cozy", "gentle", "peaceful", "sleepy", "tinch", "sokin", "osuda", "спокойный", "тихий", "уютный"],
+    "epic": ["epic", "heroic", "brave", "big", "adventure", "quest", "sarguzasht", "jasur", "qahramonlik", "эпический", "героический", "приключение"]
+  }
+}

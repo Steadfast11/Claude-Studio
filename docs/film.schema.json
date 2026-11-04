@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "voxel-studio/film.schema.json",
+  "title": "Voxel Studio film.json",
+  "description": "A short film as data. Compiled by engine/compile.js into the film() DSL using existing parts only. Unknown words are resolved to the closest part (engine/resolve.js).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "duration",
+    "set",
+    "cast",
+    "beats"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 5,
+      "maximum": 90
+    },
+    "format": {
+      "enum": [
+        "16:9",
+        "9:16",
+        "1:1"
+      ],
+      "default": "16:9"
+    },
+    "set": {
+      "enum": [
+        "studio",
+        "uzbek-room"
+      ]
+    },
+    "light": {
+      "enum": [
+        "golden-hour",
+        "night-lamp",
+        "overcast"
+      ]
+    },
+    "cast": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "part"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,23}$"
+          },
+          "part": {
+            "enum": [
+              "anor",
+              "kosa",
+              "pista",
+              "choynak",
+              "piyola",
+              "non",
+              "lagan-plov",
+              "qoshiq"
+            ]
+          },
+          "params": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "props": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "part"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,23}$"
+          },
+          "part": {
+            "enum": [
+              "anor",
+              "kosa",
+              "choynak",
+              "piyola",
+              "non",
+              "lagan-plov",
+              "qoshiq"
+            ]
+          },
+          "params": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "beats": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "enum": [
+              "establish",
+              "discover",
+              "chase",
+              "bonk",
+              "catch",
+              "celebrate",
+              "sad",
+              "title"
+            ]
+          },
+          "who": {
+            "type": "string",
+            "description": "cast id"
+          },
+          "target": {
+            "type": "string",
+            "description": "cast or prop id"
+          },
+          "seconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "relative weight; rescaled to duration"
+          },
+          "mood": {
+            "enum": [
+              "happy",
+              "playful",
+              "tense",
+              "sad",
+              "calm",
+              "epic"
+            ]
+          }
+        }
+      }
+    },
+    "music": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cue": {
+          "enum": [
+            "lazgi-chase"
+          ]
+        },
+        "mood": {
+          "enum": [
+            "happy",
+            "playful",
+            "tense",
+            "sad",
+            "calm",
+            "epic"
+          ]
+        }
+      }
+    }
+  }
+}

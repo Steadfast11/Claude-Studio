@@ -44,7 +44,7 @@ export async function openFilm({ film, part, scale = 1, quality = 'final', brows
   page.setDefaultTimeout(timeout);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log(`[page ${m.type()}]`, m.text()); });
   page.on('pageerror', (e) => console.log('[page error]', e.message));
-  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? { film } : { part }), ...(view ? { view } : {}) });
+  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? (String(film).endsWith('.json') ? { 'film-json': film } : { film }) : { part }), ...(view ? { view } : {}) });
   await page.goto(`http://127.0.0.1:${srv.port}/index.html?${q}`);
   await page.waitForFunction(() => window.READY || window.ERROR, null, { timeout });
   const err = await page.evaluate(() => window.ERROR);

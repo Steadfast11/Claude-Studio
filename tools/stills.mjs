@@ -1,6 +1,7 @@
 // tools/stills.mjs — review without rendering the whole film: a labelled contact sheet of chosen times.
 //   npm run stills -- --film anor --at shots            # start / middle / end of every shot → renders/anor-sheet.png
 //   npm run stills -- --film anor --at 3.2,4.4,10.5      # specific times
+//   npm run stills -- --film-json films/<slug>/film.json # a compiled film.json
 //   npm run stills -- --part piyola                      # one still of a part demo → renders/parts/piyola.png
 //   options: --scale 0.5 (default)  --quality preview|final|draft  --cols 3  --out file.png  --single (no sheet, one PNG per time)
 //            --view plan (top-down layout check: every still from the same camera)
@@ -12,7 +13,7 @@ const a = parseArgs();
 const scale = Number(a.scale || 0.5);
 const quality = a.quality || 'preview';
 const t0 = Date.now();
-const { page, info, close } = await openFilm({ film: a.film, part: a.part, scale, quality, view: a.view });
+const { page, info, close } = await openFilm({ film: a.film || a['film-json'], part: a.part, scale, quality, view: a.view });
 
 let times;
 if (a.part && !a.at) times = [Number(a.t || info.duration * 0.6)];
@@ -21,7 +22,7 @@ else if (a.at === 'all') times = [...Array(Math.floor(info.duration * 2) + 1)].m
 else times = String(a.at).split(',').map(Number);
 times = times.map((t) => Math.min(Math.max(0, t), info.duration - 1 / info.fps));
 
-const name = a.film || a.part;
+const name = a['film-json'] ? path.basename(path.dirname(path.resolve(a['film-json']))) : a.film || a.part;
 const outDir = a.part ? 'renders/parts' : 'renders';
 fs.mkdirSync(outDir, { recursive: true });
 const shots = [];

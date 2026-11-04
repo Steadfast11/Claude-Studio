@@ -1,6 +1,7 @@
 // tools/render.mjs — frame-accurate film render: headless Chromium seeks every frame, PNGs are piped into ffmpeg
 // (libx264 crf 16, yuv420p), the soundtrack is rendered offline in the page and muxed as AAC 192k.
 //   npm run render -- --film anor                      # → renders/anor.mp4 (1920×1080, film fps)
+//   npm run render -- --film-json films/<slug>/film.json  # a compiled film.json → renders/<slug>.mp4
 //   options: --scale 0.5  --quality final|preview|draft  --from 3 --to 8 (seconds)  --workers 3
 //            --out path.mp4  --audio-only (→ .wav)  --no-audio  --crf 16  --preset medium
 // Workers are separate browser processes, each encoding its own frame range; segments are concatenated losslessly.
@@ -11,13 +12,14 @@ import { launch, openFilm, grab, parseArgs } from './_browser.mjs';
 import { startServer } from './serve.mjs';
 
 const a = parseArgs();
-const film = a.film;
-if (!film) { console.error('usage: npm run render -- --film <name> [--scale 0.5] [--workers 2]'); process.exit(1); }
+const film = a.film || a['film-json']; // --film-json films/<slug>/film.json → compiled by engine/compile.js
+if (!film) { console.error('usage: npm run render -- --film <name> | --film-json <path> [--scale 0.5] [--workers 2]'); process.exit(1); }
+const tag = a['film-json'] ? path.basename(path.dirname(path.resolve(film))) : film;
 const scale = Number(a.scale || 1), quality = a.quality || 'final', workers = Math.max(1, Number(a.workers || 1));
-const tmp = path.join('.tmp', `render-${film}`);
+const tmp = path.join('.tmp', `render-${tag}`);
 fs.mkdirSync(tmp, { recursive: true });
 fs.mkdirSync('renders', { recursive: true });
-const out = a.out || path.join('renders', `${film}${scale !== 1 ? `-${scale}x` : ''}.mp4`);
+const out = a.out || path.join('renders', `${tag}${scale !== 1 ? `-${scale}x` : ''}.mp4`);
 const t0 = Date.now();
 const server = await startServer(0);
 const ffmpeg = process.env.FFMPEG || 'ffmpeg';
@@ -33,13 +35,13 @@ let wav = null;
 if (!a['no-audio']) {
   const ta = Date.now();
   const b64 = await probe.page.evaluate(() => window.renderAudio());
-  wav = path.join(tmp, `${film}.wav`);
+  wav = path.join(tmp, `${tag}.wav`);
   fs.writeFileSync(wav, Buffer.from(b64, 'base64'));
   console.log(`audio rendered in ${((Date.now() - ta) / 1000).toFixed(1)}s → ${wav}`);
 }
 await probe.close(); await probeBrowser.close();
 if (a['audio-only']) {
-  const dst = a.out || path.join('renders', `${film}.wav`);
+  const dst = a.out || path.join('renders', `${tag}.wav`);
   fs.copyFileSync(wav, dst); console.log('wrote', dst); server.server.close(); process.exit(0);
 }
 

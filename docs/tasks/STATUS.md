@@ -1,6 +1,6 @@
 # Phases (do the first unchecked one; see CLAUDE.md → Autopilot)
 
-- [ ] 1 — film.json assembler on existing parts → `phase-1.md`
+- [x] 1 — film.json assembler on existing parts → `phase-1.md`
 - [ ] 2 — character archetypes + prop recipe generator → `phase-2.md`
 - [ ] 3 — sets, weather, music styles, voice, text layer → `phase-3.md`
 - [ ] 4 — 10,000-topic coverage, QA, docs → `phase-4.md`

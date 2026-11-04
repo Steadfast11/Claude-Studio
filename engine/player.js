@@ -1,5 +1,5 @@
 // engine/player.js — preview page + render host. Loaded by index.html.
-// URL params: film=<name> (films/<name>/film.js) | part=<name> (part demo) · render (no UI, no realtime loop)
+// URL params: film=<name> (films/<name>/film.js) | film-json=<path> (compiled film.json) | part=<name> (part demo) · render (no UI, no realtime loop)
 //             view=<name> (replace all shots by one static camera view, e.g. view=plan for a top-down layout check)
 //             scale=0.5 (resolution multiplier of 1920×1080) · quality=draft|preview|final · t=<seconds>
 // Exposes: window.seek(t), window.DURATION, window.FPS, window.renderAudio() → base64 WAV, window.READY,
@@ -15,17 +15,24 @@ import '../parts/index.js';
 const P = new URLSearchParams(location.search);
 const RENDER = P.has('render');
 const scale = Number(P.get('scale') || (RENDER ? 1 : 0.6667));
-const W = Math.round(1920 * scale), H = Math.round(1080 * scale);
+let W = Math.round(1920 * scale), H = Math.round(1080 * scale);
+const FORMAT_SIZE = { '9:16': [1080, 1920], '1:1': [1080, 1080] }; // film.json format (16:9 stays 1920×1080)
 const quality = P.get('quality') || (RENDER ? 'final' : 'preview');
 
 async function loadFilm() {
   if (P.get('part')) return partDemoFilm(P.get('part'));
+  if (P.get('film-json')) { // film.json → compile (engine/compile.js)
+    const { compileFilm } = await import('./compile.js');
+    const src = P.get('film-json');
+    return compileFilm(await (await fetch(src.startsWith('/') ? src : `/${src}`)).json());
+  }
   const name = P.get('film') || 'anor';
   return (await import(`../films/${name}/film.js`)).default;
 }
 
 async function main() {
   const desc = await loadFilm();
+  if (FORMAT_SIZE[desc.format]) [W, H] = FORMAT_SIZE[desc.format].map((v) => Math.round(v * scale));
   const canvas = document.getElementById('view');
   canvas.width = W; canvas.height = H;
   const { renderer, quality: q } = createRenderer({ canvas, width: W, height: H, quality });

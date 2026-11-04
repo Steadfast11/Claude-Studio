@@ -1,0 +1,66 @@
+{
+  "title": "A cat chases a pomegranate",
+  "format": "16:9",
+  "set": "uzbek-room",
+  "light": "golden-hour",
+  "cast": [
+    {
+      "id": "cat",
+      "part": "pista"
+    },
+    {
+      "id": "pomegranate",
+      "part": "anor"
+    }
+  ],
+  "props": [
+    {
+      "id": "cup",
+      "part": "piyola"
+    },
+    {
+      "id": "bread",
+      "part": "non"
+    }
+  ],
+  "beats": [
+    {
+      "type": "establish",
+      "who": "cat",
+      "seconds": 3.72
+    },
+    {
+      "type": "discover",
+      "who": "cat",
+      "target": "pomegranate",
+      "seconds": 2.73
+    },
+    {
+      "type": "chase",
+      "who": "cat",
+      "target": "pomegranate",
+      "seconds": 4.97
+    },
+    {
+      "type": "catch",
+      "who": "cat",
+      "target": "pomegranate",
+      "seconds": 3.23
+    },
+    {
+      "type": "celebrate",
+      "who": "cat",
+      "seconds": 3.72
+    },
+    {
+      "type": "title",
+      "who": "cat",
+      "seconds": 3.23
+    }
+  ],
+  "duration": 21.6,
+  "music": {
+    "cue": "lazgi-chase",
+    "mood": "playful"
+  }
+}

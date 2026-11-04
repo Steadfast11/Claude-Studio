@@ -13,7 +13,10 @@
     "render": "node tools/render.mjs",
     "parts-doc": "node tools/parts-doc.mjs",
     "probe": "node tools/probe.mjs",
-    "setup": "playwright install chromium"
+    "setup": "playwright install chromium",
+    "schema": "node tools/schema.mjs",
+    "assemble": "node tools/assemble.mjs",
+    "coverage": "node tools/coverage.mjs"
   },
   "dependencies": {
     "@fontsource/nunito": "5.2.7",

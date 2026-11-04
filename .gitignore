@@ -2,6 +2,7 @@ node_modules/
 renders/*
 !renders/anor.mp4
 !renders/*-sheet.png
+!renders/coverage.md
 !renders/parts/
 renders/parts/*
 !renders/parts/*.png
