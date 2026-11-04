@@ -2,6 +2,7 @@
 //   focus: 'hero'                                  // follow-focus on the hero all shot long
 //   focus: [{ t: 3.0, on: 'fruit' }, { t: 4.3, on: 'hero', pull: 0.35 }]   // rack focus at 4.3 s over 0.35 s
 //   focus: 42                                      // fixed distance (cm)
+//   focus: [0, 6, 0]                               // a world point (or any anchor spec, e.g. { at: 'bowl.rim' })
 // makeFocus(shot, resolve) → (t, camPos) → distance in world units.
 import { E } from '../anim/easing.js';
 
@@ -9,7 +10,8 @@ export function makeFocus(shot, resolve) {
   const f = shot.focus;
   if (f === undefined || f === null) return (t, cam) => resolve(shot.look ?? shot.target ?? [0, 0, 0], t).distanceTo(cam);
   if (typeof f === 'number') return () => f;
-  const keys = (Array.isArray(f) ? f : [{ t: shot.t0, on: f }]).map((k) => ({ pull: 0.4, ...k })).sort((a, b) => a.t - b.t);
+  const isPoint = Array.isArray(f) && typeof f[0] === 'number';
+  const keys = (Array.isArray(f) && !isPoint ? f : [{ t: shot.t0, on: f }]).map((k) => ({ pull: 0.4, ...k })).sort((a, b) => a.t - b.t);
   const dist = (k, t, cam) => (typeof k.on === 'number' ? k.on : resolve(k.on, t).distanceTo(cam));
   return (t, cam) => {
     let i = 0;

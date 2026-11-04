@@ -8,6 +8,7 @@ import { createStage } from './core/stage.js';
 import { createClock } from './core/clock.js';
 import { renderSoundtrack } from './audio/soundtrack.js';
 import { partDemoFilm } from './core/demo.js';
+import { listParts } from './core/registry.js';
 import '../parts/index.js';
 
 const P = new URLSearchParams(location.search);
@@ -33,6 +34,7 @@ async function main() {
   window.FPS = stage.fps;
   window.seek = (t) => { stage.seek(t); return true; };
   window.renderAudio = async () => renderSoundtrack(desc, stage.timeline, { base64: true });
+  window.PARTS = listParts().map(({ name, kind, options }) => ({ name, kind, options }));
   window.FILM_INFO = { name: desc.name, shots: desc.shots.map(({ t0, t1, rig, name }) => ({ t0, t1, rig, name })), markers: stage.timeline.markers, renderer: rendererInfo(renderer), size: [W, H], quality: q.name };
   stage.seek(Number(P.get('t') || 0));
   window.READY = true;

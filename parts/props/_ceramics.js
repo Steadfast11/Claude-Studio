@@ -1,5 +1,5 @@
 // parts/props/_ceramics.js — shared helpers for glazed ceramics (not a part itself).
-//   const { mesh, regions } = latheVessel(profile, { texture, segments });   profile: [[r, y], ...] outside → rim → inside
+//   const { mesh, marks } = latheVessel(profile, { map, segments });   profile: [[r, y], ...] outside → rim → inside
 //   paxtaTexture({ ground, ink, gold })     cobalt "paxta" cotton-boll lattice (Uzbek tea-set pattern)
 //   rishtonTexture({ glaze, ink, accent })  turquoise/cobalt Rishton-style bowl painting with a central rosette
 // Textures are painted in lathe UV space: u = around, v = along the profile (0 = outer foot, 1 = inner centre).
@@ -22,9 +22,10 @@ function resample(profile, n = 90) {
   return { points: out, marks };
 }
 
-/** Lathe a vessel. Returns { mesh, marks } where marks[i] is the v coordinate of input profile point i. */
+/** Lathe a vessel. map may be a texture or (marks) => texture, where marks[i] is the v of input profile point i. */
 export function latheVessel(profile, { map, color = '#ffffff', segments = 72, roughness = 0.28, clearcoat = 0.9, bumpMap = null } = {}) {
   const { points, marks } = resample(profile);
+  if (typeof map === 'function') map = map(marks);
   const geo = new THREE.LatheGeometry(points, segments);
   geo.computeVertexNormals();
   const mat = new THREE.MeshPhysicalMaterial({ color, map, roughness, clearcoat, clearcoatRoughness: 0.12, bumpMap, bumpScale: 0.3, envMapIntensity: 1.2 });
@@ -47,12 +48,14 @@ function boll(g, s, ink, white, gold) {
   g.restore();
 }
 
-/** Cobalt net with white cotton bolls and gold rim lines (the classic "paxta" pattern). bands: [v0, v1] of the field. */
-export function paxtaTexture({ ground = '#f7f3ea', ink = '#1d3f9a', gold = '#d6a640', field = [0.12, 0.46], inner = [0.54, 0.6], cols = 10, rows = 3, seed = 1, key } = {}) {
+/**
+ * Cobalt net with white cotton bolls and gold lines (the classic "paxta" pattern).
+ * field: [v0, v1] of the lattice band · lines: v positions of gold lines · band: optional [v0, v1] plain cobalt band (e.g. inside the rim)
+ */
+export function paxtaTexture({ ground = '#f7f3ea', ink = '#1d3f9a', gold = '#d6a640', field = [0.12, 0.46], lines = [0.5], band = [0.54, 0.6], cols = 10, rows = 3, key } = {}) {
   return canvasTexture(1024, 1024, (g, w, h) => {
     g.fillStyle = ground; g.fillRect(0, 0, w, h);
     const y0 = vy(h, field[1]), y1 = vy(h, field[0]);
-    // cobalt lattice
     g.fillStyle = ink; g.fillRect(0, y0, w, y1 - y0);
     const cw = w / cols, ch = (y1 - y0) / rows;
     g.strokeStyle = '#4f74c8'; g.lineWidth = 3;
@@ -60,14 +63,11 @@ export function paxtaTexture({ ground = '#f7f3ea', ink = '#1d3f9a', gold = '#d6a
     for (let r = 0; r < rows; r++) for (let c = 0; c <= cols; c++) {
       g.save(); g.translate((c + (r % 2) * 0.5) * cw, y0 + (r + 0.5) * ch); boll(g, Math.min(cw, ch) * 0.62, '#16307a', '#ffffff', gold); g.restore();
     }
-    // gold lines framing the field + rim band
     g.fillStyle = gold;
-    for (const v of [field[0], field[1]]) g.fillRect(0, vy(h, v) - 4, w, 8);
-    g.fillRect(0, vy(h, 0.5) - 10, w, 20);
-    // inside: a narrow blue border just under the rim
-    g.fillStyle = ink; g.fillRect(0, vy(h, inner[1]), w, vy(h, inner[0]) - vy(h, inner[1]));
-    g.fillStyle = gold; g.fillRect(0, vy(h, inner[1]) - 3, w, 6);
-  }, { key: key || `paxta${ground}${ink}${gold}${field}${inner}${cols}${rows}${seed}` });
+    for (const v of field) g.fillRect(0, vy(h, v) - 4, w, 8);
+    for (const v of lines) g.fillRect(0, vy(h, v) - 9, w, 18);
+    if (band) { g.fillStyle = ink; g.fillRect(0, vy(h, band[1]), w, vy(h, band[0]) - vy(h, band[1])); g.fillStyle = gold; g.fillRect(0, vy(h, band[1]) - 3, w, 6); }
+  }, { key: key || `paxta${ground}${ink}${gold}${field}${lines}${band}${cols}${rows}` });
 }
 
 /** Rishton-style: turquoise glaze, cobalt/green brush motifs on the outer wall, radial petals inside, a rosette centre. */

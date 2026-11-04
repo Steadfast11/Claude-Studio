@@ -57,6 +57,6 @@ export const pista = definePart({
   name: 'pista', kind: 'character',
   options: { color: '#4fb8a8', belly: '#a6e6d3', doppi: true, scale: 1, voice: 1, surface: 'cloth' },
   build(o, ctx) { return createCreature(pistaDesign(o), o, ctx); },
-  demo: { radius: 30, height: 6, lens: 60, duration: 4, action: [[0.5, 'subject.gasp'], [1.6, 'subject.cheer'], [3, 'subject.blush']] },
+  demo: { radius: 48, height: 8, lens: 55, fstop: 5.6, duration: 4, action: [[0.5, 'subject.gasp'], [1.6, 'subject.cheer'], [3, 'subject.blush']] },
 });
 export default pista;
