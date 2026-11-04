@@ -8,3 +8,4 @@ renders/parts/*
 .frames/
 .tmp/
 *.log
+*.bundle
