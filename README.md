@@ -9,6 +9,7 @@ synthesized Web Audio soundtrack → MP4).
 ```bash
 npm install
 npm run dev            # preview at http://localhost:5173/?film=anor
+npm run gallery        # character gallery at http://localhost:5173/gallery.html (turntables, any action)
 ```
 
 ## Render ANOR on a Mac

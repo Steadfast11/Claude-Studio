@@ -1,0 +1,16 @@
+{
+  "_doc": "Robots and object-creatures (a thing + eyes + limbs). shape: see parts/characters/archetypes/bodies.js SHAPES.",
+  "characters": {
+    "robot":             { "archetype": "robot", "size": 120, "tags": ["machine", "space", "lab"], "palette": { "body": "#c8ced8", "accent": "#4a6a9a", "dark": "#1e2430", "glow": "#7ff7ff" }, "accessories": ["antenna"] },
+    "teapot-buddy":      { "archetype": "object", "shape": "teapot", "size": 15, "tags": ["object", "kitchen", "tea"], "palette": { "body": "#1d4f9c", "accent": "#f3efe4", "limb": "#1d4f9c", "pattern": "#f3efe4" }, "pattern": "spots" },
+    "kettle-buddy":      { "archetype": "object", "shape": "kettle", "size": 22, "tags": ["object", "kitchen", "tea"], "palette": { "body": "#c8ccd4", "dark": "#2a2a30", "limb": "#8a8e98" } },
+    "toaster":           { "archetype": "object", "shape": "toaster", "size": 20, "tags": ["object", "kitchen", "machine"], "palette": { "body": "#e85a4a", "dark": "#3a3a40", "limb": "#c0c4cc" } },
+    "book-buddy":        { "archetype": "object", "shape": "book", "size": 25, "tags": ["object", "school"], "palette": { "body": "#3a7a5a", "accent": "#e8c050", "limb": "#3a7a5a" } },
+    "car-buddy":         { "archetype": "object", "shape": "car", "size": 150, "tags": ["object", "vehicle", "city", "machine"], "palette": { "body": "#e04040", "dark": "#25232a" } },
+    "rocket":            { "archetype": "object", "shape": "rocket", "size": 60, "tags": ["object", "vehicle", "space"], "palette": { "body": "#f2f2f6", "accent": "#e04040", "dark": "#3a3a48", "limb": "#e04040" } },
+    "cloud":             { "archetype": "object", "shape": "cloud", "size": 100, "tags": ["object", "sky", "weather"], "blush": "#a8c8ff", "palette": { "body": "#f8fbff", "limb": "#e8eef8" } },
+    "sun":               { "archetype": "object", "shape": "sun", "size": 80, "tags": ["object", "sky", "weather"], "palette": { "body": "#ffc830", "accent": "#ff9a20", "limb": "#ffb020" } },
+    "star":              { "archetype": "object", "shape": "star", "size": 40, "tags": ["object", "sky", "night", "space"], "palette": { "body": "#ffd84a", "limb": "#ffc020" } },
+    "pomegranate-buddy": { "archetype": "object", "shape": "pomegranate", "size": 10, "tags": ["object", "food", "kitchen"], "palette": { "body": "#c3102f", "accent": "#7a1020", "limb": "#3a7a2a" } }
+  }
+}

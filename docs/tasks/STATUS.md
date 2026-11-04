@@ -1,7 +1,7 @@
 # Phases (do the first unchecked one; see CLAUDE.md → Autopilot)
 
 - [x] 1 — film.json assembler on existing parts → `phase-1.md`
-- [ ] 2 — director fix + 60 characters + animation library + gallery → `phase-2.md`
+- [x] 2 — director fix + 60 characters + animation library + gallery → `phase-2.md`
 - [ ] 3 — 40 places: modular rooms & worlds + light presets → `phase-3.md`
 - [ ] 4 — 300 props + variant/skin system + prop actions → `phase-4.md`
 - [ ] 5 — weather, music styles, babble voice, text layer → `phase-5.md`

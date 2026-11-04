@@ -31,6 +31,6 @@ export function startServer(port = 5173, { quiet = true } = {}) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT || 5173);
   startServer(port, { quiet: false }).then(({ port }) => {
-    console.log(`Voxel Studio preview → http://localhost:${port}/?film=anor`);
+    console.log(process.argv.includes('--gallery') ? `Voxel Studio gallery → http://localhost:${port}/gallery.html` : `Voxel Studio preview → http://localhost:${port}/?film=anor`);
   });
 }

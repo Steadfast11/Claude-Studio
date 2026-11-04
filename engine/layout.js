@@ -18,7 +18,7 @@ export function radiusOf(part, params = {}) {
   let o = {};
   try { o = { ...getPart(part).def.options, ...params }; } catch { /* unknown → default */ }
   const s = Number(o.scale) || 1;
-  if (getSafeKind(part) === 'character') return 6 * s;
+  if (getSafeKind(part) === 'character') { let fp = 6; try { fp = getPart(part).def.footprint ?? 6; } catch { /* default */ } return fp * s; }
   if (o.diameter) return o.diameter / 2;
   if (o.size) return o.size / 2;
   if (o.length) return Math.min(o.length / 2, 8);

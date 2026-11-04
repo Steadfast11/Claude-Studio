@@ -16,3 +16,4 @@ export * from './props/kurpacha.js';
 export * from './lights/night-lamp.js';
 export * from './lights/overcast.js';
 export * from './music/lazgi-chase.js';
+export * from './characters/library.js';

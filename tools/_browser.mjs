@@ -36,7 +36,7 @@ export async function launch() {
   }
 }
 
-export async function openFilm({ film, part, scale = 1, quality = 'final', browser, server, verbose = true, timeout = 600000, view }) {
+export async function openFilm({ film, part, gallery, per, action, scale = 1, quality = 'final', browser, server, verbose = true, timeout = 600000, view }) {
   const srv = server || (await startServer(0));
   const br = browser || (await launch());
   const W = Math.round(1920 * scale), H = Math.round(1080 * scale);
@@ -44,13 +44,13 @@ export async function openFilm({ film, part, scale = 1, quality = 'final', brows
   page.setDefaultTimeout(timeout);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log(`[page ${m.type()}]`, m.text()); });
   page.on('pageerror', (e) => console.log('[page error]', e.message));
-  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? (String(film).endsWith('.json') ? { 'film-json': film } : { film }) : { part }), ...(view ? { view } : {}) });
+  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? (String(film).endsWith('.json') ? { 'film-json': film } : { film }) : gallery ? { gallery, ...(per ? { per: String(per) } : {}), ...(action ? { action } : {}) } : { part }), ...(view ? { view } : {}) });
   await page.goto(`http://127.0.0.1:${srv.port}/index.html?${q}`);
   await page.waitForFunction(() => window.READY || window.ERROR, null, { timeout });
   const err = await page.evaluate(() => window.ERROR);
   if (err) throw new Error(err);
   const info = await page.evaluate(() => ({ ...window.FILM_INFO, duration: window.DURATION, fps: window.FPS }));
-  if (verbose) console.log(`WebGL: ${info.renderer}\n${film || part}: ${info.duration}s @ ${info.fps}fps, ${info.size.join('×')}, quality=${info.quality}`);
+  if (verbose) console.log(`WebGL: ${info.renderer}\n${film || part || gallery}: ${info.duration}s @ ${info.fps}fps, ${info.size.join('×')}, quality=${info.quality}`);
   return {
     browser: br, page, info, server: srv,
     close: async () => { await page.close(); if (!browser) await br.close(); if (!server) srv.server.close(); },

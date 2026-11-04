@@ -7,6 +7,8 @@ import { catalog, LIMITS, FORMATS } from './schema.js';
 import { resolvePart, resolveWord, norm } from './resolve.js';
 import { BEATS } from './beats.js';
 import { getPart } from './core/registry.js';
+import { capOf } from './resolve.js';
+import { MOVABLE } from './beats.js';
 
 const isObj = (x) => x && typeof x === 'object' && !Array.isArray(x);
 const q = (v) => (typeof v === 'string' ? `'${v.slice(0, 30)}'` : JSON.stringify(v)?.slice(0, 30));
@@ -54,6 +56,7 @@ export function validate(input) {
         if (b.target !== undefined && !ids.has(b.target)) e.push(`beats[${i}].target: ${q(b.target)} not in cast or props`);
         if (b.seconds !== undefined && !(typeof b.seconds === 'number' && b.seconds > 0)) e.push(`beats[${i}].seconds: must be a positive number`);
         if (b.mood !== undefined && !c.moods.includes(b.mood)) e.push(`beats[${i}].mood: ${q(b.mood)} not one of ${c.moods.join(', ')}`);
+        if (b.action !== undefined && !c.actions.includes(b.action)) e.push(`beats[${i}].action: ${q(b.action)} not a character action`);
       });
     }
     if (j.music !== undefined) {
@@ -196,6 +199,17 @@ export function autofix(input) {
     const sec = typeof b.seconds === 'number' ? b.seconds : parseFloat(b.seconds);
     if (sec > 0) r.seconds = sec;
     if (b.mood !== undefined) { const m = resolveWord(b.mood, 'moods', null); fb('beats.mood', m.how); if (m.id) r.mood = m.id; }
+    if (b.action !== undefined) { const a = resolveWord(b.action, 'actions', null); fb('beats.action', a.id ? a.how : 'default', !a.id && `beats[${i}].action: ${q(b.action)} dropped`); if (a.id && catalog().actions.includes(a.id)) r.action = a.id; }
+    // chase / race / catch need a movable target (an actor or a rolling prop): find one, else the beat becomes 'approach'
+    if (BEATS[r.type].needs === 'movable') {
+      const partOf = (id) => [...out.cast, ...out.props].find((e) => e.id === id)?.part;
+      const movable = (id) => MOVABLE.includes(capOf(partOf(id)));
+      if (!r.target || !movable(r.target)) {
+        const alt = allIds.find((id) => id !== whoId && movable(id));
+        if (alt && !r.target) r.target = alt;
+        else { fixes.push(`beats[${i}].type: ${r.type} needs a movable target${r.target ? ` ('${r.target}' can't move)` : ''} → approach`); r.type = 'approach'; }
+      }
+    }
     return r;
   });
   // duration (parse "30s", clamp), then rescale the beats to it

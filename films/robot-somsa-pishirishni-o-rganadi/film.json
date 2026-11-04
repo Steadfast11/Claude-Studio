@@ -1,0 +1,63 @@
+{
+  "title": "Robot somsa pishirishni o'rganadi",
+  "format": "16:9",
+  "set": "uzbek-room",
+  "light": "golden-hour",
+  "cast": [
+    {
+      "id": "robot",
+      "part": "robot"
+    }
+  ],
+  "props": [
+    {
+      "id": "somsa",
+      "part": "non"
+    },
+    {
+      "id": "cup",
+      "part": "piyola"
+    }
+  ],
+  "beats": [
+    {
+      "type": "establish",
+      "who": "robot",
+      "seconds": 3.86
+    },
+    {
+      "type": "discover",
+      "who": "robot",
+      "target": "somsa",
+      "seconds": 2.83
+    },
+    {
+      "type": "perform",
+      "who": "robot",
+      "target": "somsa",
+      "seconds": 3.86
+    },
+    {
+      "type": "perform",
+      "who": "robot",
+      "target": "somsa",
+      "action": "think",
+      "seconds": 3.86
+    },
+    {
+      "type": "celebrate",
+      "who": "robot",
+      "seconds": 3.86
+    },
+    {
+      "type": "title",
+      "who": "robot",
+      "seconds": 3.33
+    }
+  ],
+  "duration": 21.6,
+  "music": {
+    "cue": "lazgi-chase",
+    "mood": "playful"
+  }
+}

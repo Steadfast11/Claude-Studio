@@ -1,0 +1,72 @@
+{
+  "_doc": "Camera language per beat type, measured from ANOR's real shots (films/anor/film.js, hero ≈ 10 cm). dist/height are cm for a 10 cm subject and scale with the subject's height; yaw = degrees of the camera around the subject away from its facing (0 = straight on; the side nearer the set's front is chosen); lookY = aim point as a fraction of subject height; frame: who | both (who + target) | target (an insert). move: static | crane | push | pull | track (from → to). focusPull: seconds to pull focus from the other subject to who's face. hold: minimum seconds. Presets are tried in order; engine/director.js keeps the first that passes the framing check.",
+  "rules": { "frontLimit": 70, "worldYaw": 75, "minHeight": 0.12, "edge": 0.97, "insertMax": 0.8, "samples": [0.06, 0.5, 0.94] },
+  "beats": {
+    "establish": [
+      { "name": "crane-in", "src": "anor 0-3.0 crane window→table-mid", "move": "crane", "from": { "yaw": 10, "dist": 112, "height": 48, "lookY": 0.3 }, "to": { "yaw": 17, "dist": 62, "height": 15, "lookY": 0.5 }, "lens": 32, "lensTo": 40, "fstop": 5.6, "focusPull": 1.4, "hold": 2.2 },
+      { "name": "wide", "src": "anor 11.5 wide", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 },
+      { "name": "fit-wide", "move": "static", "to": { "yaw": 0, "dist": 150, "height": 60, "lookY": 0.3 }, "lens": 32, "fstop": 8 }
+    ],
+    "discover": [
+      { "name": "kosa-insert", "src": "anor 3.0-4.3 kosa", "frame": "target", "move": "static", "to": { "yaw": 27, "dist": 39, "height": 14, "lookY": 0.4 }, "lens": 55, "fstop": 5.6, "hold": 0.8 },
+      { "name": "gasp-two-shot", "src": "anor 4.3-5.5 gasp", "frame": "both", "move": "static", "to": { "yaw": 12, "dist": 52, "height": 9, "lookY": 0.6 }, "lens": 35, "fstop": 4, "focusPull": 0.35 },
+      { "name": "two-shot-3q", "frame": "both", "move": "static", "to": { "yaw": 35, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "src": "anor 11.5 wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "surprise": [
+      { "name": "gasp-two-shot", "src": "anor 4.3-5.5 gasp", "frame": "both", "move": "static", "to": { "yaw": 12, "dist": 52, "height": 9, "lookY": 0.6 }, "lens": 35, "fstop": 4, "focusPull": 0.35 },
+      { "name": "two-shot-3q", "frame": "both", "move": "static", "to": { "yaw": 35, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "chase": [
+      { "name": "chase-low", "src": "anor 5.5-7.8 track fruit [8,3,30]", "move": "track", "on": "runner", "to": { "yaw": 15, "dist": 31, "height": 3, "lookY": 0.5 }, "lens": 32, "fstop": 4, "lag": 0.3, "handheld": 0.4 },
+      { "name": "chase-front", "src": "anor 7.8-9.9 track hero [-22,6,26]", "move": "track", "to": { "yaw": 40, "dist": 34, "height": 6, "lookY": 0.5 }, "lens": 35, "fstop": 5.6, "lag": 0.25, "handheld": 0.5 },
+      { "name": "chase-side", "move": "track", "to": { "yaw": 60, "dist": 40, "height": 8, "lookY": 0.5 }, "lens": 35, "fstop": 5.6, "lag": 0.25, "handheld": 0.5 },
+      { "name": "chase-wide", "move": "track", "to": { "yaw": 30, "dist": 70, "height": 20, "lookY": 0.4 }, "lens": 32, "fstop": 8, "lag": 0.35, "handheld": 0.3 }
+    ],
+    "race": [
+      { "name": "race-side", "move": "track", "to": { "yaw": 60, "dist": 46, "height": 7, "lookY": 0.5 }, "lens": 32, "fstop": 5.6, "lag": 0.25, "handheld": 0.4 },
+      { "name": "chase-front", "src": "anor 7.8-9.9", "move": "track", "to": { "yaw": 40, "dist": 34, "height": 6, "lookY": 0.5 }, "lens": 35, "fstop": 5.6, "lag": 0.25, "handheld": 0.5 },
+      { "name": "chase-wide", "move": "track", "to": { "yaw": 30, "dist": 70, "height": 20, "lookY": 0.4 }, "lens": 32, "fstop": 8, "lag": 0.35, "handheld": 0.3 }
+    ],
+    "approach": [
+      { "name": "follow-3q", "src": "anor 7.8-9.9 (slower)", "move": "track", "to": { "yaw": 35, "dist": 40, "height": 8, "lookY": 0.5 }, "lens": 35, "fstop": 5.6, "lag": 0.35, "handheld": 0.25 },
+      { "name": "two-shot-3q", "frame": "both", "move": "static", "to": { "yaw": 35, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "bonk": [
+      { "name": "bonk", "src": "anor 9.9-11.5 bonk", "frame": "both", "move": "static", "to": { "yaw": 8, "dist": 56, "height": 9, "lookY": 0.5 }, "lens": 45, "fstop": 5.6 },
+      { "name": "two-shot-3q", "frame": "both", "move": "static", "to": { "yaw": 35, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "catch": [
+      { "name": "leap-push", "src": "anor 12.7-15.0 leap push", "move": "push", "frame": "both", "from": { "yaw": 18, "dist": 63, "height": 30, "lookY": 0.4 }, "to": { "yaw": 20, "dist": 26, "height": 8, "lookY": 0.6 }, "lens": 40, "fstop": 4 },
+      { "name": "push-3q", "move": "push", "frame": "both", "from": { "yaw": 30, "dist": 70, "height": 26, "lookY": 0.4 }, "to": { "yaw": 30, "dist": 40, "height": 10, "lookY": 0.6 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "celebrate": [
+      { "name": "hero-low", "src": "anor 15.0-17.5 hero", "move": "static", "to": { "yaw": 5, "dist": 30, "height": 3, "lookY": 0.75 }, "lens": 30, "fstop": 4 },
+      { "name": "hero-3q", "move": "static", "to": { "yaw": 30, "dist": 40, "height": 8, "lookY": 0.6 }, "lens": 30, "fstop": 4 },
+      { "name": "group", "frame": "both", "move": "static", "to": { "yaw": 10, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 32, "fstop": 5.6 }
+    ],
+    "sad": [
+      { "name": "high-lonely", "src": "studio (not in ANOR): high angle, long lens", "move": "static", "to": { "yaw": 0, "dist": 50, "height": 34, "lookY": 0.4 }, "lens": 50, "fstop": 5.6, "grade": { "exposure": 0.8 } },
+      { "name": "sad-two-shot", "frame": "both", "move": "static", "to": { "yaw": 25, "dist": 60, "height": 22, "lookY": 0.4 }, "lens": 40, "fstop": 5.6, "grade": { "exposure": 0.8 } },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 90, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8, "grade": { "exposure": 0.8 } }
+    ],
+    "perform": [
+      { "name": "medium", "src": "anor 15.0 hero (higher)", "move": "static", "to": { "yaw": 15, "dist": 36, "height": 7, "lookY": 0.6 }, "lens": 35, "fstop": 4 },
+      { "name": "medium-3q", "move": "static", "to": { "yaw": 35, "dist": 46, "height": 10, "lookY": 0.55 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "talk": [
+      { "name": "talk-two-shot", "src": "anor 4.3 gasp framing, both", "frame": "both", "move": "static", "to": { "yaw": 25, "dist": 50, "height": 9, "lookY": 0.6 }, "lens": 35, "fstop": 4 },
+      { "name": "two-shot-3q", "frame": "both", "move": "static", "to": { "yaw": 40, "dist": 60, "height": 14, "lookY": 0.5 }, "lens": 35, "fstop": 5.6 },
+      { "name": "wide", "frame": "both", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ],
+    "title": [
+      { "name": "outro-pull", "src": "anor 17.5-20 outro pull", "move": "pull", "from": { "yaw": 12, "dist": 40, "height": 12, "lookY": 0.5 }, "to": { "yaw": 8, "dist": 115, "height": 48, "lookY": 0.3 }, "lens": 40, "fstop": 5.6 },
+      { "name": "wide", "move": "static", "to": { "yaw": 0, "dist": 84, "height": 42, "lookY": 0.3 }, "lens": 35, "fstop": 8 }
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 // engine/player.js — preview page + render host. Loaded by index.html.
-// URL params: film=<name> (films/<name>/film.js) | film-json=<path> (compiled film.json) | part=<name> (part demo) · render (no UI, no realtime loop)
+// URL params: film=<name> (films/<name>/film.js) | film-json=<path> (compiled film.json) | part=<name> (part demo) | gallery=characters · render (no UI, no realtime loop)
 //             view=<name> (replace all shots by one static camera view, e.g. view=plan for a top-down layout check)
 //             scale=0.5 (resolution multiplier of 1920×1080) · quality=draft|preview|final · t=<seconds>
 // Exposes: window.seek(t), window.DURATION, window.FPS, window.renderAudio() → base64 WAV, window.READY,
@@ -8,7 +8,7 @@ import { createRenderer, rendererInfo } from './core/renderer.js';
 import { createStage } from './core/stage.js';
 import { createClock } from './core/clock.js';
 import { renderSoundtrack } from './audio/soundtrack.js';
-import { partDemoFilm } from './core/demo.js';
+import { partDemoFilm, galleryFilm } from './core/demo.js';
 import { listParts } from './core/registry.js';
 import '../parts/index.js';
 
@@ -21,6 +21,7 @@ const quality = P.get('quality') || (RENDER ? 'final' : 'preview');
 
 async function loadFilm() {
   if (P.get('part')) return partDemoFilm(P.get('part'));
+  if (P.get('gallery')) return galleryFilm(P.get('gallery'), { per: Number(P.get('per') || 6), action: P.get('action'), slot: Number(P.get('slot') || 2), turntable: P.has('turntable') });
   if (P.get('film-json')) { // film.json → compile (engine/compile.js)
     const { compileFilm } = await import('./compile.js');
     const src = P.get('film-json');
@@ -38,6 +39,7 @@ async function main() {
   const { renderer, quality: q } = createRenderer({ canvas, width: W, height: H, quality });
   const stage = await createStage(desc, { renderer, quality: q, width: W, height: H, view: P.get('view') });
   window.STAGE = stage;
+  window.RENDER_CTX = { renderer, quality: q }; // tools (actions-check, gallery) build extra stages with it
   window.DURATION = stage.duration;
   window.FPS = stage.fps;
   window.seek = (t) => { stage.seek(t); return true; };

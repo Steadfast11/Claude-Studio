@@ -16,7 +16,9 @@
     "setup": "playwright install chromium",
     "schema": "node tools/schema.mjs",
     "assemble": "node tools/assemble.mjs",
-    "coverage": "node tools/coverage.mjs"
+    "coverage": "node tools/coverage.mjs",
+    "actions-check": "node tools/actions-check.mjs",
+    "gallery": "node tools/serve.mjs --gallery"
   },
   "dependencies": {
     "@fontsource/nunito": "5.2.7",

@@ -10,6 +10,7 @@ import { fill, roundedBox, box } from '../../engine/voxel/shapes.js';
 import { mixHex, shade } from '../../engine/materials/palette.js';
 import { hash } from '../../engine/core/rng.js';
 import { createCreature } from './_rig.js';
+import { SOLO_ACTIONS } from './_rig-actions.js';
 
 /** The doppi as a fine voxel grid (16×7×16): black walls, white pepper-pod motif on each side, stitched corners. */
 export function doppiGrid({ black = '#17161b', white = '#f3efe4', size = 16 } = {}) {
@@ -56,6 +57,7 @@ export function pistaDesign(o) {
 export const pista = definePart({
   name: 'pista', kind: 'character',
   options: { color: '#4fb8a8', belly: '#a6e6d3', doppi: true, scale: 1, voice: 1, surface: 'cloth' },
+  actions: SOLO_ACTIONS,
   build(o, ctx) { return createCreature(pistaDesign(o), o, ctx); },
   demo: { radius: 48, height: 8, lens: 55, fstop: 5.6, duration: 4, action: [[0.5, 'subject.gasp'], [1.6, 'subject.cheer'], [3, 'subject.blush']] },
 });
