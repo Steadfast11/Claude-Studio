@@ -2,10 +2,10 @@
 // (like a small model would: "cat", "kitchen", "chases"), so engine/resolve.js + validate.js autofix do the real work.
 //   import { mockAssemble } from './mock-assemble.mjs';  mockAssemble('a cat chases a pomegranate')
 //   node tools/mock-assemble.mjs "a cat chases a pomegranate"   → prints film.json
-import { tags, norm, resolveWord } from '../engine/resolve.js';
+import { tags, norm, resolveWord, partKind } from '../engine/resolve.js';
 
 const has = (list, w) => list.some((x) => norm(x) === w);
-const CHAR = [...tags.categories.character.words, ...tags.parts.pista];
+const CHAR = [...tags.categories.character.words, ...Object.entries(tags.parts).filter(([id]) => partKind(id) === 'character').flatMap(([, w]) => w)];
 const MOVER = [...tags.categories.mover.words, ...tags.parts.anor];
 const THINGS = [...tags.categories.rockable.words, ...tags.categories.static.words,
   ...['kosa', 'piyola', 'choynak', 'non', 'lagan-plov', 'qoshiq', 'kurpacha', 'dasturxon'].flatMap((id) => tags.parts[id])];
@@ -17,7 +17,7 @@ const STOP = new Set(['a', 'an', 'the', 'and', 'with', 'in', 'on', 'at', 'of', '
 export function mockAssemble(idea) {
   const text = norm(idea);
   const words = text.split(' ').filter((w) => w && !STOP.has(w));
-  const cast = [], props = [], verbs = [];
+  const cast = [], props = [], verbs = [], acts = {};
   let set, light, mood, color, duration, format;
   const dm = text.match(/(\d+(?:[.,]\d+)?)\s*(?:s|sec|secs|second|seconds|soniya|сек\S*)\b/u);
   if (dm) duration = parseFloat(dm[1].replace(',', '.'));
@@ -29,7 +29,9 @@ export function mockAssemble(idea) {
     const w = words[i];
     if (COLOR.test(w)) { color = w; continue; }
     const beat = resolveWord(w, 'beats');
-    if (beat.id && beat.how !== 'fuzzy') { verbs.push(beat.id); continue; }
+    const act = resolveWord(w, 'actions');
+    if (beat.id && beat.how !== 'fuzzy') { verbs.push(beat.id); if (act.id && act.how !== 'fuzzy') acts[verbs.length - 1] = w; continue; }
+    if (act.id && act.how !== 'fuzzy' && w.length > 2) { verbs.push('perform'); acts[verbs.length - 1] = w; continue; }
     const m = resolveWord(w, 'moods');
     if (m.id && m.how !== 'fuzzy' && !mood) { mood = w; continue; }
     if (has(CHAR, w) && cast.length < 3) { cast.push({ id: idOf(w), part: w, ...(color ? { params: { color } } : {}) }); color = undefined; continue; }
@@ -48,11 +50,13 @@ export function mockAssemble(idea) {
   for (const w of ['cup', 'bread']) if (props.length < 2) props.push({ id: idOf(w), part: w });
   const who = cast[0].id;
   const target = cast[1]?.id || props[0]?.id;
-  const story = verbs.filter((v, i) => v !== verbs[i - 1] && v !== 'establish' && v !== 'title');
-  if (!story.length) story.push('chase', 'catch');
-  if (story.includes('chase') && !story.includes('catch') && !story.includes('sad')) story.splice(story.indexOf('chase') + 1, 0, 'catch');
-  if (!['celebrate', 'sad'].includes(story[story.length - 1])) story.push(mood && resolveWord(mood, 'moods').id === 'sad' ? 'sad' : 'celebrate');
-  const beats = [{ type: 'establish', who }, { type: 'discover', who, target }, ...story.map((type) => ({ type, who, ...(type === 'celebrate' || type === 'sad' ? {} : { target }) })), { type: 'title', who }];
+  const story = verbs.map((v, i) => ({ v, a: acts[i] })).filter((x, i, a) => (i === 0 || x.v !== a[i - 1].v || x.a) && x.v !== 'establish' && x.v !== 'title');
+  const S = story.map((x) => x.v);
+  if (!S.length) story.push({ v: 'chase' }, { v: 'catch' });
+  const vs = () => story.map((x) => x.v);
+  if (vs().includes('chase') && !vs().includes('catch') && !vs().includes('sad')) story.splice(vs().indexOf('chase') + 1, 0, { v: 'catch' });
+  if (!['celebrate', 'sad'].includes(vs()[vs().length - 1])) story.push({ v: mood && resolveWord(mood, 'moods').id === 'sad' ? 'sad' : 'celebrate' });
+  const beats = [{ type: 'establish', who }, { type: 'discover', who, target }, ...story.slice(0, 7).map(({ v: type, a }) => ({ type, who, ...(a ? { action: a } : {}), ...(type === 'celebrate' || type === 'sad' ? {} : { target }) })), { type: 'title', who }];
   if (mood) beats.forEach((b) => { if (b.type !== 'title') b.mood = mood; });
   const title = idea.trim().replace(/\s+\d+\s*\S*$/, '').split(/\s+/).slice(0, 6).join(' ').replace(/^./, (c) => c.toUpperCase());
   return {

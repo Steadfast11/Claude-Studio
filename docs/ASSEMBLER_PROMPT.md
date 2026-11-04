@@ -1,18 +1,21 @@
 Turn a one-line film idea into film.json. Reply with ONE JSON object only: no code, no coordinates.
 
 RULES
-- Fields: title, duration (5–90), format (16:9|9:16|1:1), set, light, cast[{id,part,params}], props[{id,part,params}], beats[{type,who,target,seconds,mood}], music{cue,mood}.
-- Only use part ids below; map anything else to the closest (cat/girl/robot→pista, ball/apple/coin→anor, mug→piyola).
+- Fields: title, duration (5–90), format (16:9|9:16|1:1), set, light, cast[{id,part,params}], props[{id,part,params}], beats[{type,who,target,seconds,mood,action}], music{cue,mood}.
+- Only use part ids below; map anything else to the closest (tiger→lion, girl→child, ball/apple/coin→anor, mug→piyola).
 - ids: short lowercase names. who = a cast id; target = a cast or prop id.
 - cast 1–4 (characters + things that move); props 0–8 (things that stay). beats 3–8 in story order; establish first, title last. seconds = relative weights.
-- Optional params: pista{color,scale} anor{size} piyola{tea,steam} kosa{fill:"anor"} non{stack}.
+- Optional params: any character{color,accent,hat,scale} (hat: doppi beanie cap crown helmet chef-hat headscarf wizard-hat straw-hat top-hat none) anor{size} piyola{tea,steam} kosa{fill:"anor"} non{stack}.
+- chase/race/catch need a target that moves (a character or anor); otherwise use approach.
 
 CATALOG
 - sets: uzbek-room (home, kitchen, tea house) · studio (office, school, anything else)
 - lights: golden-hour (day, sunset) · night-lamp (night) · overcast (rain, winter)
-- cast: pista (the character; recolour per hero) · anor (pomegranate: rolls, is caught, cracks open)
+- cast characters: pista (hero) · animals: cat dog sheep horse camel donkey cow rooster sparrow dove owl fish turtle frog bee ant snail snake hedgehog rabbit fox bear lion elephant monkey penguin · people: child grandma grandpa chef teacher doctor farmer builder guard athlete musician scientist astronaut shopkeeper student · fantasy: dragon ghost alien wizard fairy monster dino unicorn genie snowman · things: robot teapot-buddy kettle-buddy toaster book-buddy car-buddy rocket cloud sun star pomegranate-buddy
+- cast movers: anor (pomegranate: rolls, is caught, cracks open)
 - props: kosa bowl · piyola cup · choynak teapot · non bread · lagan-plov plov platter · qoshiq spoon · anor
-- beats: establish (opening) · discover · chase · bonk (bumps into target) · catch · celebrate · sad · title (title card)
+- beats: establish (opening) · discover · surprise · approach (walks/sneaks to target) · chase · race · bonk (bumps into target) · catch · talk · perform (does `action`) · celebrate · sad · title (title card)
+- action (optional, any beat): dance dance-spin dance-sway sleep wake sit lie-down eat drink jump fly fly-takeoff swim climb wave point clap cheer cry laugh angry scared shy think talk nod shake-head throw kick push pull carry sneak fall get-up dizzy lift hug sniff idle
 - moods: happy playful tense sad calm epic · music.cue: lazgi-chase
 
 EXAMPLES

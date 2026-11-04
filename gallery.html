@@ -1,0 +1,128 @@
+<!doctype html>
+<!-- gallery.html — every character in the library: live turntable on hover/click, any action from the dropdown,
+     filters by group / archetype / tag. npm run gallery → http://localhost:5173/gallery.html
+     One shared stage (engine/core/demo.js galleryFilm, one 4 s slot per character) renders all thumbnails. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voxel Studio — Characters</title>
+  <link rel="icon" href="data:," />
+  <script type="importmap">
+    { "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+  </script>
+  <style>
+    :root { --bg: #14110f; --card: #1f1a16; --fg: #efe4d2; --mut: #a39886; --acc: #e0a84a; --line: #3a322b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+    header { position: sticky; top: 0; z-index: 2; background: #14110fee; backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    h1 { font-size: 17px; margin: 0 12px 0 0; }
+    select, input { background: #2a241f; color: var(--fg); border: 1px solid #4a4038; border-radius: 6px; padding: 5px 8px; font: inherit; }
+    #count, #status { color: var(--mut); }
+    main { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: pointer; }
+    .card.live { border-color: var(--acc); }
+    .card canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #0c0a09; }
+    .meta { padding: 7px 10px 9px; }
+    .name { font-weight: 600; }
+    .tags { color: var(--mut); font-size: 12px; }
+    .tags b { color: var(--acc); font-weight: 500; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Characters</h1>
+    <label>group <select id="group"><option value="">all</option></select></label>
+    <label>archetype <select id="arch"><option value="">all</option></select></label>
+    <label>tag <select id="tag"><option value="">all</option></select></label>
+    <input id="q" placeholder="search…" size="12" />
+    <label>action <select id="action"><option value="">idle (smile / wave)</option></select></label>
+    <span id="count"></span> <span id="status">loading…</span>
+  </header>
+  <main id="grid"></main>
+  <canvas id="gl" width="480" height="270" style="display:none"></canvas>
+  <script type="module">
+    import { createRenderer } from './engine/core/renderer.js';
+    import { createStage } from './engine/core/stage.js';
+    import { galleryFilm } from './engine/core/demo.js';
+    import { listParts } from './engine/core/registry.js';
+    import { SOLO_ACTIONS } from './parts/characters/_rig-actions.js';
+    import './parts/index.js';
+
+    const SLOT = 4, $ = (id) => document.getElementById(id);
+    const chars = listParts().filter((d) => d.kind === 'character');
+    const meta = (d) => d.meta || { group: 'hero', archetype: 'blob', tags: ['creature'], size: 10 };
+    const uniq = (xs) => [...new Set(xs)].sort();
+    const fill = (sel, xs) => xs.forEach((x) => sel.add(new Option(x, x)));
+    fill($('group'), uniq(chars.map((d) => meta(d).group)));
+    fill($('arch'), uniq(chars.map((d) => meta(d).archetype)));
+    fill($('tag'), uniq(chars.flatMap((d) => meta(d).tags)));
+    fill($('action'), SOLO_ACTIONS);
+
+    const gl = $('gl');
+    const { renderer, quality } = createRenderer({ canvas: gl, width: gl.width, height: gl.height, quality: 'preview' });
+    let stage = null, live = null, t0Live = 0, building = null;
+    const cards = chars.map((d, i) => {
+      const m = meta(d), el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `<canvas width="480" height="270"></canvas><div class="meta"><div class="name">${d.name}</div><div class="tags"><b>${m.archetype}</b> · ${m.size} cm real · ${(m.height || 10).toFixed?.(1) ?? m.height} cm mini · ${m.tags.join(', ')}</div></div>`;
+      $('grid').appendChild(el);
+      const c = { d, i, el, cv: el.querySelector('canvas'), snapped: false, key: `${d.name} ${m.group} ${m.archetype} ${m.tags.join(' ')}` };
+      el.onmouseenter = () => play(c);
+      el.onclick = () => play(c);
+      el.onmouseleave = () => { if (live === c) stop(); };
+      return c;
+    });
+
+    async function build() {
+      $('status').textContent = 'building stage…';
+      const action = $('action').value || null;
+      const desc = galleryFilm('characters', { per: 1, slot: SLOT, turntable: true, action });
+      stage = await createStage(desc, { renderer, quality, width: gl.width, height: gl.height });
+      cards.forEach((c) => { c.snapped = false; });
+      $('status').textContent = '';
+      snapVisible();
+    }
+    function draw(c, t) { stage.seek(t); const g = c.cv.getContext('2d'); g.drawImage(gl, 0, 0, c.cv.width, c.cv.height); }
+    const tOf = (c, u) => c.i * SLOT + 0.5 + u * (SLOT - 0.6);
+    // thumbnails: render only cards on screen, a few per frame
+    const visible = new Set();
+    const io = new IntersectionObserver((es) => { for (const e of es) (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)); snapVisible(); });
+    cards.forEach((c) => io.observe(c.el));
+    let snapping = false;
+    function snapVisible() {
+      if (snapping || !stage) return;
+      snapping = true;
+      const step = () => {
+        const todo = cards.filter((c) => !c.snapped && visible.has(c.el) && c.el.style.display !== 'none').slice(0, 2);
+        for (const c of todo) { draw(c, tOf(c, 0.55)); c.snapped = true; }
+        if (todo.length) requestAnimationFrame(step); else snapping = false;
+      };
+      requestAnimationFrame(step);
+    }
+    function play(c) { if (!stage) return; if (live) live.el.classList.remove('live'); live = c; c.el.classList.add('live'); t0Live = performance.now(); }
+    function stop() { if (live) { live.el.classList.remove('live'); draw(live, tOf(live, 0.55)); } live = null; }
+    function loop(now) {
+      if (live && stage) { const u = (((now - t0Live) / 1000) % (SLOT - 0.6)) / (SLOT - 0.6); draw(live, tOf(live, u)); }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    function filter() {
+      const g = $('group').value, a = $('arch').value, t = $('tag').value, q = $('q').value.trim().toLowerCase();
+      let n = 0;
+      for (const c of cards) {
+        const m = meta(c.d), ok = (!g || m.group === g) && (!a || m.archetype === a) && (!t || m.tags.includes(t)) && (!q || c.key.includes(q));
+        c.el.style.display = ok ? '' : 'none'; n += ok;
+      }
+      $('count').textContent = `${n} / ${cards.length}`;
+      snapVisible();
+    }
+    ['group', 'arch', 'tag'].forEach((id) => { $(id).onchange = filter; });
+    $('q').oninput = filter;
+    $('action').onchange = () => { live = null; building = build(); };
+    filter();
+    building = build();
+    window.GALLERY = { cards: cards.length, ready: () => building };
+  </script>
+</body>
+</html>

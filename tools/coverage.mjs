@@ -9,6 +9,7 @@ import { capOf } from '../engine/resolve.js';
 import { SFX } from '../engine/audio/sfx.js';
 import { LIMITS } from '../engine/schema.js';
 import { rng } from '../engine/core/rng.js';
+import { ACTIONS } from '../parts/characters/_rig-actions.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const N = Number(arg('n', 1000)), SEED = Number(arg('seed', 1)), BROWSER = Number(arg('browser', 0));
@@ -33,7 +34,7 @@ export function topics(n, seed = 1) {
 }
 
 const VERBS = {
-  actor: 'walk run sprint chase stop turn look face blink smile gasp anticipate jump hop leap land skid bonk shake peek sniff catch push lift cheer wave eat blush laugh sit balance hug snap'.split(' '),
+  actor: ACTIONS,
   mover: 'wobble fall hop roll carry crack'.split(' '), rockable: ['wobble'], static: [], dressing: [],
 };
 /** Structural checks of a compiled film (what the stage would otherwise throw on). */
@@ -72,7 +73,8 @@ const rOf = (s) => { const o = s.opts; return o.diameter ? o.diameter / 2 : o.si
 
 async function main() {
   const list = topics(N, SEED);
-  let rawValid = 0, fixedValid = 0, compiled = 0, deepOk = 0;
+  let rawValid = 0, fixedValid = 0, compiled = 0, deepOk = 0, shotsN = 0, shotsOk = 0;
+  const failWhy = {}, presetUse = {};
   const fb = {}, failures = [], fixesCount = {};
   const t0 = Date.now();
   const samples = [];
@@ -89,6 +91,7 @@ async function main() {
       const film = compileFilm(raw);
       compiled++;
       errs = errs.concat(deepCheck(film));
+      for (const d of film.assembly.director) { shotsN++; presetUse[d.preset] = (presetUse[d.preset] || 0) + 1; if (d.ok) shotsOk++; else for (const w of d.why) { const k = w.replace(/^[^:]+: /, '').replace(/\d+/g, 'N'); failWhy[k] = (failWhy[k] || 0) + 1; } }
       if (samples.length < BROWSER) samples.push({ topic, json: fx.json });
     } catch (err) { errs.push(`compile threw: ${err.message}`); }
     if (!errs.length) deepOk++; else if (failures.length < 15) failures.push(`- \`${topic}\` → ${errs.slice(0, 3).join('; ')}`);
@@ -117,7 +120,7 @@ async function main() {
     const tot = Object.values(h).reduce((s, x) => s + x, 0), fall = tot - (h.exact || 0) - (h.synonym || 0);
     return `| ${k} | ${tot} | ${((100 * fall) / tot).toFixed(1)} % | ${['exact', 'synonym', 'category', 'fuzzy', 'default'].map((x) => h[x] || 0).join(' / ')} |`;
   });
-  const md = `# film.json coverage (phase 1)
+  const md = `# film.json coverage (phase 2)
 
 ${N} synthetic topics (seed ${SEED}) from small en/uz/ru word lists → \`tools/mock-assemble.mjs\` (free words, like a small LLM)
 → \`engine/validate.js\` autofix → validate → \`engine/compile.js\` → structural check. ${((Date.now() - t0) / 1000).toFixed(1)} s.
@@ -128,7 +131,11 @@ ${N} synthetic topics (seed ${SEED}) from small en/uz/ru word lists → \`tools/
 | valid after autofix | ${pct(fixedValid)} |
 | compiled without throwing | ${pct(compiled)} |
 | **valid end-to-end (autofix + compile + deep check)** | **${pct(deepOk)}** |
-${browserLine}
+${browserLine}| director shots passing the framing check (start/mid/end: in frame, ≥ 12 % height, not cut, face visible) | ${shotsOk} / ${shotsN} (${((100 * shotsOk) / Math.max(1, shotsN)).toFixed(1)} %) |
+
+Director: most used presets ${Object.entries(presetUse).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => `${k} ${v}`).join(' · ')}.
+Remaining framing misses (kept best effort): ${Object.entries(failWhy).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ×${v}`).join(' · ') || 'none'}.
+
 ## Fallbacks per field
 
 "fallback" = not an exact id and not a listed synonym (category default, fuzzy match or kind default).

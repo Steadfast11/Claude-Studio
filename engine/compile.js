@@ -10,6 +10,8 @@ import { autofix } from './validate.js';
 import { layout } from './layout.js';
 import { BEATS } from './beats.js';
 import { capOf } from './resolve.js';
+import { direct } from './director.js';
+import { FORMAT_ASPECT } from './schema.js';
 
 const MUSIC_MOOD = {
   happy: { bpm: [100, 160], key: 'G' }, playful: { bpm: [92, 152], key: 'D' }, tense: { bpm: [100, 172], key: 'E' },
@@ -56,11 +58,55 @@ export function compileFilm(input, { name } = {}) {
   let titleT0 = null;
   const state = { ...L.pos };
   const live = (id) => id in parts;
+  // where everyone is and which way they face over time (for the director's framing check)
+  const tracks = {}; // id → [{ t0, t1, pts }]   (sorted by insertion = story order)
+  const facings = {}; // id → [{ t, yaw }]
+  const heightOf = (id) => { const pid = parts[id], prm = { ...(j.cast.find((x) => x.id === id)?.params || {}), ...(j.props.find((x) => x.id === id)?.params || {}) }; let d; try { d = getPart(pid).def; } catch { /* unknown */ } const sc = Number(prm.scale) || 1; return d?.meta?.height ? d.meta.height * sc : d?.kind === 'character' ? 9.5 * sc : Math.max(3, (L.radius[id] ?? 6) * 1.2); };
+  const segLen = (pts) => pts.reduce((a, p, i) => a + (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0), 0);
+  function posAt(id, t) {
+    let seg = null;
+    for (const g of tracks[id] || []) if (g.t0 <= t + 1e-9 && (!seg || g.t0 >= seg.t0)) seg = g;
+    if (!seg) return L.pos[id] || [0, 0];
+    const { pts } = seg;
+    if (t >= seg.t1 || pts.length < 2) return pts[pts.length - 1];
+    const want = segLen(pts) * Math.max(0, (t - seg.t0) / Math.max(1e-6, seg.t1 - seg.t0));
+    let acc = 0;
+    for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (acc + l >= want) { const u = l ? (want - acc) / l : 0; return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u]; } acc += l; }
+    return pts[pts.length - 1];
+  }
+  function yawAt(id, t) {
+    let yaw = 0, when = -Infinity;
+    for (const f of facings[id] || []) if (f.t <= t + 1e-9 && f.t >= when) { yaw = f.yaw; when = f.t; }
+    for (const g of tracks[id] || []) {
+      if (g.t0 > t + 1e-9 || g.pts.length < 2) continue;
+      const a = posAt(id, Math.min(t, g.t1) - 0.08), b = posAt(id, Math.min(t, g.t1));
+      const tt = Math.min(t, g.t1);
+      if (tt >= when && Math.hypot(b[0] - a[0], b[1] - a[1]) > 0.05) { yaw = Math.atan2(b[0] - a[0], b[1] - a[1]); when = tt; }
+    }
+    return yaw;
+  }
+  const aspect = FORMAT_ASPECT[j.format] || 16 / 9;
+  const directorLog = [];
   const c = {
     L, rnd: rng(seed).next,
     cap: (id) => capOf(parts[id]),
     pos: (id) => state[id] || [0, 0],
-    set: (id, p) => { state[id] = [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]; },
+    set: (id, p, t = c.now) => { state[id] = [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]; (tracks[id] ||= []).push({ t0: t, t1: t, pts: [state[id]] }); },
+    /** record a move along pts during [t, t + dur] (the beat also emits the action) */
+    move: (id, pts, t, dur) => { (tracks[id] ||= []).push({ t0: t, t1: t + dur, pts: pts.map((p) => [p[0], p[1]]) }); state[id] = [Math.round(pts[pts.length - 1][0] * 10) / 10, Math.round(pts[pts.length - 1][1] * 10) / 10]; },
+    posAt, yawAt, h: heightOf, now: 0,
+    /** turn an actor to a world yaw (rad) at t, held for `hold` s */
+    turn: (id, yaw, t, hold = 1) => { if (capOf(parts[id]) !== 'actor') return; (facings[id] ||= []).push({ t: t + 0.3, yaw }); c.at(t, `${id}.turn`, { to: Math.round((yaw * 180) / Math.PI), dur: 0.3, hold }); },
+    /** subject for the director at time t */
+    subject: (id, t) => ({ id, pos: posAt(id, t), y: 0, h: heightOf(id), r: L.radius[id] ?? 6, yaw: yawAt(id, t), face: capOf(parts[id]) === 'actor' }),
+    /** ask the director for a shot over [t0, t1] (presets of beat `type`), push it, log the framing check */
+    cam: (t0, t1, type, o = {}) => {
+      if (t1 - t0 < 0.05) return null;
+      const r = direct(type, { ...o, t0, t1, aspect, at: c.subject, bounds: { maxY: 60, maxZ: 115 } });
+      c.shot(t0, t1, r.shot);
+      directorLog.push({ t0: Math.round(t0 * 100) / 100, t1: Math.round(t1 * 100) / 100, beat: type, preset: r.preset, ok: r.ok, who: o.who, why: [...new Set(r.checks.flatMap((x) => x.why))] });
+      return r;
+    },
     r: (id) => L.radius[id] ?? 6,
     isProp: (id) => id in props,
     others: (id) => Object.keys(cast).filter((x) => x !== id),
@@ -83,7 +129,12 @@ export function compileFilm(input, { name } = {}) {
     spans.push({ ...b, t0: t, t1, target: live(b.target) ? b.target : undefined });
     t = t1;
   });
-  for (const s of spans) BEATS[s.type].build(c, s, s.t0, s.t1);
+  for (const s of spans) {
+    c.now = s.t0;
+    BEATS[s.type].build(c, s, s.t0, s.t1);
+    // any beat can carry a library action for `who` (dance, think, cry…), played over its middle
+    if (s.action && s.type !== 'perform' && capOf(parts[s.who]) === 'actor') c.at(s.t0 + (s.t1 - s.t0) * 0.3, `${s.who}.${s.action}`, { dur: Math.max(0.6, (s.t1 - s.t0) * 0.5) });
+  }
   // shots must tile [0, D] exactly: snap the edges
   out.shots.sort((a, b) => a.t0 - b.t0);
   out.shots.forEach((s, i) => { s.t0 = i === 0 ? 0 : out.shots[i - 1].t1; if (i === out.shots.length - 1) s.t1 = j.duration; });
@@ -101,7 +152,7 @@ export function compileFilm(input, { name } = {}) {
     shots: out.shots, action: out.action, sfx: out.sfx,
     music: [music(0, getPart(j.music.cue)(MUSIC_MOOD[mood] || MUSIC_MOOD.playful))],
     post: { fade: [[0, 1], [0.6, 0], [Math.max(0.7, D - 0.6), 0], [D, 0.55]] },
-    assembly: { json: j, fixes, fallbacks, dropped: L.dropped, slots: L.slot },
+    assembly: { json: j, fixes, fallbacks, dropped: L.dropped, slots: L.slot, director: directorLog },
   };
   if (titleT0 !== null) {
     desc.titleCard = { t0: titleT0, text: j.title.toUpperCase(), credit: 'Made with Voxel Studio', color, edge };

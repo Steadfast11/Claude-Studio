@@ -15,8 +15,9 @@ import { E } from '../../engine/anim/easing.js';
 import { clamp, smoothstep, ring, TAU, noise1, wrapAngle } from '../../engine/core/math.js';
 import { rng } from '../../engine/core/rng.js';
 import { EYES, BROWS, MOUTHS, spriteSlot } from './_faces.js';
+import { extraActions, gaitPose, flightModel } from './_rig-actions.js';
 
-const HAND_VERBS = ['catch', 'lift', 'push', 'eat', 'wave', 'cheer', 'drop', 'hug'];
+const HAND_VERBS = ['catch', 'lift', 'push', 'eat', 'wave', 'cheer', 'drop', 'hug', 'carry', 'throw', 'clap', 'point', 'drink', 'pull'];
 const SPEEDS = { walk: 14, run: 32, sprint: 60 };
 
 /** Slow-motion arc timing: fast take-off, lingering apex, fast landing. */
@@ -37,25 +38,31 @@ export function createCreature(design, o, ctx) {
   const bodyMesh = buildVoxels(design.body, { size: V, seed, origin: 'base' }).root;
   body.add(bodyMesh);
   // limbs
-  const mk = (grid) => buildVoxels(grid, { size: V, seed: seed + 7, origin: 'center' }).root;
+  const mk = (grid) => (grid ? buildVoxels(grid, { size: V, seed: seed + 7, origin: 'center' }).root : new THREE.Group());
   const handL = mk(design.hand), handR = mk(design.hand), footL = mk(design.foot), footR = mk(design.foot);
   body.add(handL, handR); lean.add(footL, footR);
-  const handRest = (s) => new THREE.Vector3(s * (W / 2 + design.handOut * V), design.handY * H, D * 0.08);
-  const footRest = (s) => new THREE.Vector3(s * design.footSpread * V, FH / 2, 0);
+  // optional layouts (archetypes): quad = front legs are the 'hands'; handX/handZ = explicit hand spots (V units)
+  const Q = design.quad;
+  const handRest = (s) => (Q ? new THREE.Vector3(s * Q.legX * V, -FH / 2, Q.front * V)
+    : design.handX != null ? new THREE.Vector3(s * design.handX * V, design.handY * H, (design.handZ ?? D * 0.08 / V) * V)
+      : new THREE.Vector3(s * (W / 2 + design.handOut * V), design.handY * H, D * 0.08));
+  const footRest = (s) => new THREE.Vector3(s * design.footSpread * V, FH / 2, Q ? Q.back * V : 0);
+  const HOVER = design.hover || 0, MODE = design.gait.mode || 'walk';
   // face
-  const cell = V * 0.5, fz = D / 2 + cell * 0.25;
+  const cell = V * 0.5, fz = (design.face.z != null ? design.face.z * V : D / 2) + cell * 0.25;
   const face = new THREE.Group(); face.position.z = fz; body.add(face);
   const eyeL = spriteSlot(6, 9, cell), eyeR = spriteSlot(6, 9, cell), mouth = spriteSlot(6, 4, cell), blushL = spriteSlot(3, 2, cell), blushR = spriteSlot(3, 2, cell);
   const eyeY = design.face.eyeY * H, eyeX = design.face.eyeX * V;
   [eyeL, eyeR, mouth, blushL, blushR].forEach((s) => face.add(s.mesh));
   blushL.mesh.position.set(-design.face.blushX * V, design.face.blushY * H, -cell * 0.1);
   blushR.mesh.position.set(design.face.blushX * V, design.face.blushY * H, -cell * 0.1);
-  mouth.mesh.position.set(0, design.face.mouthY * H, 0);
+  mouth.mesh.position.set(0, design.face.mouthY * H, (design.face.mouthZ || 0) * V);
   const ink = design.face.ink || '#1b1420';
   const eyeColors = { '#': ink, o: '#ffffff' };
   const mouthColors = { '#': design.face.mouth || '#3b1621', r: '#e0607a' };
   // accessory with secondary motion
   const acc = new THREE.Group(); acc.position.y = H; body.add(acc);
+  if (design.accessory?.at) acc.position.set(...design.accessory.at.map((v) => v * V));
   if (design.accessory) {
     const a = buildVoxels(design.accessory.grid, { size: design.accessory.voxel, seed: seed + 3, origin: 'base' }).root;
     a.position.y = design.accessory.y || 0;
@@ -64,6 +71,7 @@ export function createCreature(design, o, ctx) {
   const appendages = (design.appendages || []).map((ap) => {
     const g = new THREE.Group(); g.position.set(...ap.at.map((v) => v * V)); body.add(g);
     const m = buildVoxels(ap.grid, { size: ap.voxel || V, seed: seed + 11, origin: ap.origin || 'base' }).root; g.add(m);
+    if (ap.rest) g.rotation.set(ap.rest[0] || 0, ap.rest[1] || 0, ap.rest[2] || 0);
     return { g, ap };
   });
   // anchors (objects whose world position is read after posing)
@@ -107,11 +115,14 @@ export function createCreature(design, o, ctx) {
     return { phase: G.phase[i] + (G.phase[i + 1] - G.phase[i]) * u, speed: G.speed[i] + (G.speed[i + 1] - G.speed[i]) * u };
   };
 
+  const flights = flightModel(); // fly-takeoff / fly / land (hover height over time)
+
   /** Locomotion pose (no clips) — also used for the accessory's lagged secondary motion. */
   function basePose(t) {
     const m = motion.sample(t);
     const { phase: p, speed: s } = gaitAt(t);
-    const move = smoothstep(1.5, 8, s), sprint = smoothstep(35, 70, s);
+    const fk = flights.k(t);
+    const move = smoothstep(1.5, 8, s) * (1 - fk), sprint = smoothstep(35, 70, s);
     const c = p / 2, L = stepLen(s);
     const fwd = new THREE.Vector3(Math.sin(m.yaw), 0, Math.cos(m.yaw));
     const accF = m.accel.x * fwd.x + m.accel.z * fwd.z;
@@ -131,6 +142,7 @@ export function createCreature(design, o, ctx) {
       handR: [0, Math.abs(Math.sin(TAU * c)) * 0.4 * sprint, -Math.cos(TAU * c) * (0.5 + 1.3 * sprint) * move],
       lookX: 0, lookY: 0, eyeScale: 0, blush: 0, accX: 0, accZ: 0,
     };
+    if (MODE !== 'walk' || fk > 0 || HOVER) gaitPose(MODE, pose, { p, s, c, L, move, sprint, lift, t, fk, hover: HOVER + flights.h(t), V, FH, W, g, air, quad: !!Q });
     if (air) {
       const vy = m.vel.y;
       pose.squash += clamp(vy * 0.0035, -0.18, 0.28);
@@ -156,7 +168,9 @@ export function createCreature(design, o, ctx) {
     root.position.copy(P.pos);
     root.rotation.y = P.yaw + P.spin;
     lean.rotation.set(P.lean, 0, P.bank);
-    lean.position.y = P.jump; // in-place jumps lift the whole creature (feet included)
+    const lieA = (P.lie || 0) * 1.45;
+    if (lieA) lean.rotation.z += lieA;
+    lean.position.y = P.jump + (P.hover || 0) + Math.abs(Math.sin(lieA)) * W * 0.5; // in-place jumps lift the whole creature (feet included)
     const sy = 1 + P.squash, k = 1 / Math.sqrt(Math.max(sy, 0.3));
     squashG.scale.set(k * (1 + P.sx), sy, k);
     body.position.set(P.offX || 0, P.bob + P.sit, 0);
@@ -165,8 +179,13 @@ export function createCreature(design, o, ctx) {
     handsMid.position.copy(handL.position).add(handR.position).multiplyScalar(0.5).add(new THREE.Vector3(0, 0, 1.2));
     footL.position.copy(footRest(-1)).add(new THREE.Vector3(...P.footL));
     footR.position.copy(footRest(1)).add(new THREE.Vector3(...P.footR));
+    if (Q) { const gy = -FH - (P.bob + P.sit) + FH / 2; handL.position.y = Math.max(handL.position.y, gy); handR.position.y = Math.max(handR.position.y, gy); }
     acc.rotation.set((design.accessory?.tilt?.[0] || 0) + P.accX, 0, (design.accessory?.tilt?.[1] || 0) + P.accZ);
-    for (const { g: ag, ap } of appendages) ag.rotation.set((ap.rest?.[0] || 0) - P.lean * ap.swing + Math.sin(t * 3 + 1) * 0.05 * ap.swing, Math.sin(t * 2.2) * 0.25 * ap.swing + (P.bank * ap.swing), ap.rest?.[2] || 0);
+    for (const { g: ag, ap } of appendages) {
+      ag.rotation.set((ap.rest?.[0] || 0) - P.lean * ap.swing + Math.sin(t * 3 + 1) * 0.05 * ap.swing, (ap.rest?.[1] || 0) + Math.sin(t * 2.2) * 0.25 * ap.swing + (P.bank * ap.swing), ap.rest?.[2] || 0);
+      if (ap.flap && P.flap) ag.rotation.z += (ap.side || 1) * (0.25 + 0.75 * Math.sin(t * TAU * (ap.flapHz || 5))) * 0.9 * ap.flap * P.flap;
+      if (ap.wag) ag.rotation.y += Math.sin(t * TAU * (ap.wagHz || 2.2)) * ap.wag * (0.35 + (P.wag || 0) + (P.face === 'happy' ? 0.7 : 0));
+    }
     // face
     let eye = P.face || 'normal';
     if (['normal', 'determined', 'wide'].includes(eye) && blinks.some((b) => t >= b && t < b + 0.12)) eye = 'blink';
@@ -263,7 +282,11 @@ export function createCreature(design, o, ctx) {
       landSquash(t + dur, 1);
       api.sfx(t, 'whoosh', { dur: dur * 0.9, gain: 0.8 }); api.sfx(t, 'hop', voice);
     },
-    land: (t, p) => landSquash(t, p.amount ?? 1),
+    land(t, p, api) {
+      const f = flights.landAt(t, p.dur ?? 0.6);
+      if (!f) return landSquash(t, p.amount ?? 1);
+      landSquash(f, p.amount ?? 0.8); api.sfx(f, 'land', { gain: 0.6 });
+    },
     skid(t, p, api) {
       const dur = p.dur ?? 0.45;
       add({ t0: t, dur, fadeIn: 0.04, fadeOut: 0.2, fn: (u) => ({ lean: -0.38 * Math.sin(Math.PI * Math.min(1, u * 1.3)), squash: -0.1, footL: [0, 0, 1.6], footR: [0, 0, 1.6], handL: [-0.8, 1.2, -0.5], handR: [-0.8, 1.2, -0.5], face: 'wide', mouth: 'wobbly' }) });
@@ -353,7 +376,7 @@ export function createCreature(design, o, ctx) {
       api.sfx(t, 'giggle', { dur, ...voice });
     },
     sit(t, p) {
-      add({ t0: t, dur: p.dur ?? 3, hold: p.hold ?? true, fadeIn: 0.25, fadeOut: 0.3, fn: (u, tl) => ({ sit: -FH * 0.85, squash: -0.05 - 0.12 * Math.exp(-tl * 8), footL: [-0.3, 0.2, 1.8], footR: [0.3, 0.2, 1.8] }) });
+      add({ t0: t, dur: p.dur ?? 3, hold: p.hold ?? true, fadeIn: 0.25, fadeOut: 0.3, fn: (u, tl) => ({ sit: -FH * 0.85 - HOVER, squash: -0.05 - 0.12 * Math.exp(-tl * 8), footL: [-0.3, 0.2, 1.8], footR: [0.3, 0.2, 1.8] }) });
       impulses.push({ t: t + 0.25, amp: 0.3, side: 1 });
     },
     balance(t, p, api) {
@@ -368,10 +391,12 @@ export function createCreature(design, o, ctx) {
     },
   };
 
+  Object.assign(actions, extraActions({ add, anticipation, landSquash, impulses, motion, flights, actions, until, voice, W, H, D, FH, V, eyeY, HOVER, MODE, design, inst: () => inst }));
+
   // ---------- part instance ----------
   const inst = {
     root, motion, actions,
-    bounds: new THREE.Box3(new THREE.Vector3(-W / 2, 0, -D / 2), new THREE.Vector3(W / 2, FH + H, D / 2)),
+    bounds: new THREE.Box3(new THREE.Vector3(-W / 2, 0, -D / 2), new THREE.Vector3(W / 2, FH + H + HOVER, D / 2)),
     anchors: {},
     anchorAt(name, t) {
       if (!A[name]) return null;

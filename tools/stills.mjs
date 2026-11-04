@@ -3,6 +3,7 @@
 //   npm run stills -- --film anor --at 3.2,4.4,10.5      # specific times
 //   npm run stills -- --film-json films/<slug>/film.json # a compiled film.json
 //   npm run stills -- --part piyola                      # one still of a part demo → renders/parts/piyola.png
+//   npm run stills -- --gallery characters --scale 0.4   # contact sheet of every character → renders/gallery-characters-sheet.png
 //   options: --scale 0.5 (default)  --quality preview|final|draft  --cols 3  --out file.png  --single (no sheet, one PNG per time)
 //            --view plan (top-down layout check: every still from the same camera)
 import fs from 'node:fs';
@@ -13,16 +14,17 @@ const a = parseArgs();
 const scale = Number(a.scale || 0.5);
 const quality = a.quality || 'preview';
 const t0 = Date.now();
-const { page, info, close } = await openFilm({ film: a.film || a['film-json'], part: a.part, scale, quality, view: a.view });
+const { page, info, close } = await openFilm({ film: a.film || a['film-json'], part: a.part, gallery: a.gallery, per: a.per, action: a.action, scale, quality, view: a.view });
 
 let times;
 if (a.part && !a.at) times = [Number(a.t || info.duration * 0.6)];
+else if (a.gallery && !a.at) times = info.shots.map((s) => s.t0 + Math.min(1.6, (s.t1 - s.t0) * 0.8));
 else if (!a.at || a.at === 'shots') times = info.shots.flatMap((s) => [s.t0 + 0.02, (s.t0 + s.t1) / 2, s.t1 - 0.03]);
 else if (a.at === 'all') times = [...Array(Math.floor(info.duration * 2) + 1)].map((_, i) => i / 2);
 else times = String(a.at).split(',').map(Number);
 times = times.map((t) => Math.min(Math.max(0, t), info.duration - 1 / info.fps));
 
-const name = a['film-json'] ? path.basename(path.dirname(path.resolve(a['film-json']))) : a.film || a.part;
+const name = a['film-json'] ? path.basename(path.dirname(path.resolve(a['film-json']))) : a.gallery ? `gallery-${a.gallery}${a.action ? '-' + a.action : ''}` : a.film || a.part;
 const outDir = a.part ? 'renders/parts' : 'renders';
 fs.mkdirSync(outDir, { recursive: true });
 const shots = [];
@@ -54,7 +56,7 @@ if (a.single || shots.length === 1) {
       g.fillStyle = '#e0a84a'; g.font = '16px monospace'; g.fillText(imgs[i].label, x + 2, y + 18);
     });
     return c.toDataURL('image/png').split(',')[1];
-  }, [shots.map(({ t, png }) => ({ b64: png.toString('base64'), label: `t=${t.toFixed(2)}s  f${Math.round(t * info.fps)}  shot ${1 + info.shots.findIndex((s) => t >= s.t0 && t < s.t1)}` })), cols, `${name} — ${info.size.join('×')} ${info.quality}`]);
+  }, [shots.map(({ t, png }) => ({ b64: png.toString('base64'), label: a.gallery ? info.shots.find((s) => t >= s.t0 && t < s.t1)?.name || '' : `t=${t.toFixed(2)}s  f${Math.round(t * info.fps)}  shot ${1 + info.shots.findIndex((s) => t >= s.t0 && t < s.t1)}` })), cols, `${name} — ${info.size.join('×')} ${info.quality}`]);
   const out = a.out || path.join(outDir, `${name}${a.view ? '-' + a.view : ''}-sheet.png`);
   fs.writeFileSync(out, Buffer.from(sheet, 'base64'));
   console.log('wrote', out);
