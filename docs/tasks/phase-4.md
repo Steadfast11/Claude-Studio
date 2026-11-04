@@ -1,17 +1,16 @@
-# Phase 4 — 10,000-topic coverage, QA, docs
+# Phase 4 — 300 props + variant/skin system + prop actions
 
 ## Read only
-`docs/tasks/reports/phase-3.md`, `tools/coverage.mjs`, `tools/mock-assemble.mjs`, `docs/ASSEMBLER_PROMPT.md`, `engine/schema.js`. Grep for the rest.
+`docs/tasks/reports/phase-3.md`, one existing prop (`parts/props/piyola.js`), `parts/props/_prop-actions.js`, `engine/resolve.js`, `engine/schema.js`. Grep for the rest.
 
 ## Build
-1. Topics: 10,000 combinatorial topics from the axis lists (setting · time/weather · characters · objects · beats · mood · genre · audience · culture · format) plus a hand list of 100 tricky real ideas (e.g. "photosynthesis explained", "a robot learns to cook samsa", "a ghost afraid of the dark", "Navruz morning", "sneaker sale ad", "the water cycle", "Mars rover finds a flower", "grandma vs. a smart fridge", "a football final in the rain", "how a bill becomes law").
-2. `npm run coverage -- --n 10000`: 100 % valid. Report the fallback rate per axis; target < 15 %. Do **one** fix loop: extend data/recipes/tags only where the numbers are worst.
-3. `tools/qa.mjs`: ~1 frame per second at low res. Checks: frame not black or blown out, subject in frame, no NaNs, audio not silent or clipping → pass/fail JSON. Run it on 30 random films and tile them into 1–2 stills sheets.
-4. If `LLM_URL` is set: 50 topics end-to-end through `npm run assemble`; report the schema pass rate on the first try and after retries. If it isn't set, skip.
-5. Rewrite `docs/ASSEMBLER_PROMPT.md` (≤ 1,500 tokens) with the full catalog summary and 8 few-shots.
-6. Docs: `docs/CATALOG.md` (auto-generated, one line per item), short `docs/NEW_FILM.md` (idea → film.json → render), README update.
-7. ANOR regression: its stills sheet matches the one from before phase 1.
-8. 3 example films from wildly different topics in `films/examples/*.json`.
+1. **Voxel recipe DSL** (`engine/voxel/recipe.js`, JSON): primitives (box, sphere, cylinder, cone, torus, lathe profile, extrude) + ops (union, subtract, mirror, repeat, scatter) + material/pattern slots + anchors + real-world size in cm.
+2. **300 prop recipes** in `data/recipes/<category>/*.json` (a few lines each), ~20 per category: food, kitchen, furniture, tools, vehicles, nature (trees, rocks, flowers), buildings/street furniture, tech/devices, sport, musical instruments (incl. dutar, doira, karnay), school/office, medical, toys, signs, shop/money, space, garden/farm, clothing/bags, bathroom, party/holiday.
+3. **Variant/skin system**: every prop × palette × culture style (uzbek, japanese, nordic, african, latin, arabic, indian, chinese, european, futuristic, generic) × wear (new/used/old) × season. One recipe gives dozens of looks.
+4. **Prop actions** (generic, by tag): open/close (doors, lids, books, boxes), drive/roll (vehicles, balls, fruit), sway (plants, flags), spin (wheels, fans), pour, light on/off, ring/vibrate, break/burst into voxels, bounce. Movable props are flagged so chases always have a target.
+5. **Fallback**: unknown object → nearest category generic + color from a name hash + optional floating label.
+6. **Gallery**: a "Props" tab (category filter, skin switcher, action buttons) and `npm run stills -- --gallery props --scale 0.4` → contact sheets (≤ 3 images).
+7. Register in registry, tags (en/uz/ru), schema; coverage 100 % valid; report fallback per field.
 
 ## Done when
-`renders/coverage.md` shows 10,000 topics, 100 % valid, fallback per axis and weakest areas; QA passes; docs done; ANOR unchanged.
+300 recipes build at a consistent scale; skins and actions work; gallery tab + sheets exist; coverage 100 % valid; ANOR unchanged.
