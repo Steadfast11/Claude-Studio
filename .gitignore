@@ -9,3 +9,4 @@ renders/parts/*
 .tmp/
 *.log
 *.bundle
+.DS_Store
