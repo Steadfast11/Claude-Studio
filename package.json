@@ -1,0 +1,17 @@
+{
+  "name": "voxel-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A construction kit for code-drawn voxel short films: engine + parts library + film-script DSL + render pipeline.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "stills": "node tools/stills.mjs",
+    "render": "node tools/render.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.58.2",
+    "three": "0.186.1"
+  }
+}
