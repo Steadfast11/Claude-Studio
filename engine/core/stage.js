@@ -19,7 +19,13 @@ import { proceduralEnvironment } from './renderer.js';
 
 const AUTO_ANCHORS = ['center', 'top', 'base', 'front', 'back', 'left', 'right'];
 
-export async function createStage(desc, { renderer, quality, width = 1920, height = 1080 }) {
+/** Top-down review camera over the set's table (or the origin): ?view=plan in the player / stills. */
+function planView(setInst) {
+  const c = setInst?.info?.table ? setInst.info.table.getCenter(new THREE.Vector3()) : new THREE.Vector3();
+  return { pos: [c.x, c.y + 170, c.z + 0.01], look: [c.x, c.y, c.z], lens: 34 }; // stays under typical ceilings
+}
+
+export async function createStage(desc, { renderer, quality, width = 1920, height = 1080, view = null }) {
   await loadFonts();
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, width / height, 0.5, 8000);
@@ -171,16 +177,19 @@ export async function createStage(desc, { renderer, quality, width = 1920, heigh
     fn(a.t, a.params || {}, api);
   }
   // let parts finish compiling (bake gaits, collect footsteps, etc.)
+  // low props flagged `obstacle` are hopped over by characters and bumped over by rolling props
+  const obstacles = [...instances.values()].filter((i) => i.obstacle).map((i) => ({ name: i.name, box: i.worldBox }));
   for (const inst of instances.values()) {
     if (inst.motion) { inst.motion.segs.forEach((_, i) => inst.motion._build(i)); timeline.events.push(...inst.motion.events); }
-    inst.compile?.({ timeline, duration: desc.duration, resolve });
+    inst.compile?.({ timeline, duration: desc.duration, resolve, obstacles });
   }
   timeline.events.sort((a, b) => a.t - b.t);
   timeline.sfx.sort((a, b) => a.t - b.t);
 
   // ---------- camera ----------
-  const views = { ...(setInst?.views || {}), ...(desc.views || {}) };
-  const shots = (desc.shots || []).map((s) => ({ ...s, cam: makeRig(s, resolve, views), focusFn: makeFocus(s, resolve) }));
+  const views = { plan: planView(setInst), ...(setInst?.views || {}), ...(desc.views || {}) };
+  const shotList = view ? [{ t0: 0, t1: desc.duration, rig: 'static', at: view, handheld: 0, dof: false }] : desc.shots || [];
+  const shots = shotList.map((s) => ({ ...s, cam: makeRig(s, resolve, views), focusFn: makeFocus(s, resolve) }));
   const shotAt = (t) => { let s = shots[0]; for (const x of shots) if (x.t0 <= t + 1e-9) s = x; return s; };
 
   // ---------- title overlay ----------
@@ -234,8 +243,9 @@ export async function createStage(desc, { renderer, quality, width = 1920, heigh
     const focus = shot?.focusFn ? shot.focusFn(t, camera.position) : 100;
     const params = {
       time: t,
-      dof: { on: toggles.dof && shot?.dof !== false, focus, fstop: shot?.fstop ?? 2.8, focal: camera.userData.lens ?? 50, maxCoc: shot?.maxCoc ?? 22, scale: shot?.dofScale ?? 1 },
-      shafts: { ...(lightInst?.shafts || {}), on: toggles.shafts && !!lightInst?.shafts, light: sun },
+      // dofScale < 1 = 'stopped down' for tabletop scale: thin-lens DOF is physically right but too shallow at 20–60 cm
+      dof: { on: toggles.dof && shot?.dof !== false, focus, fstop: shot?.fstop ?? 2.8, focal: camera.userData.lens ?? 50, maxCoc: shot?.maxCoc ?? 22, scale: shot?.dofScale ?? post.dofScale ?? 0.4 },
+      shafts: { ...(lightInst?.shafts || {}), ...(shot?.shafts || {}), on: toggles.shafts && !!lightInst?.shafts, light: sun },
       ao: { on: toggles.ao, ...(lightInst?.ao || {}) },
       bloom: lightInst?.bloom || {},
       grade,

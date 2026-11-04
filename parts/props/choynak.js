@@ -53,7 +53,7 @@ export const choynak = definePart({
     const root = new THREE.Group(); root.add(holder);
     const rock = rockable(ctx, pivot, { sound: 'ceramic-ring', radius: 4.6 * k, pitch: 0.6 });
     const spoutTip = spoutCurve.getPoint(1).add(new THREE.Vector3(0.4 * k, 0.3 * k, 0));
-    if (o.steam) ctx.fx('steam', { at: () => root.localToWorld(spoutTip.clone()), rate: 10, life: 2.4, rise: 7, spread: 0.6, size: [1.0, 5.5], opacity: 0.14, seed: ctx.seed });
+    if (o.steam) ctx.fx('steam', { at: () => root.localToWorld(spoutTip.clone()), rate: 12, life: 2.6, rise: 7, spread: 0.6, size: [1.2, 7], opacity: 0.22, seed: ctx.seed });
     return {
       root,
       anchors: { spout: spoutTip, lid: new THREE.Vector3(0, 15.4 * k, 0), handle: new THREE.Vector3(-10 * k, 7 * k, 0), side: new THREE.Vector3(0, 0, 9 * k), back: new THREE.Vector3(0, 0, -9 * k) },

@@ -1,7 +1,7 @@
 // parts/props/anor.js — voxel pomegranate that can wobble, fall, roll (true rolling rotation), be carried,
 // and crack open into two halves full of glowing ruby arils (+ seed burst).
 //   anor({ size: 8, seed: 1 })                     size = diameter in cm
-//   actions: wobble {dur, amount} · fall {to, dur, apex, bounces} · roll {path:[...], speed | dur}
+//   actions: wobble {dur, amount} · fall {to, dur, apex, bounces} · roll {path:[...], speed | dur | keys:[[τ, fraction]...]}
 //            carry {by:'hero', anchor:'hands'} · crack {burst:true, count} · hop {to, dur, apex}
 // Sounds it emits by itself: wobble creak, landing thuds, rolling rumble (follows its real speed), crack + burst.
 import * as THREE from 'three';
@@ -14,7 +14,8 @@ import { ClipSet } from '../../engine/anim/clips.js';
 import { E } from '../../engine/anim/easing.js';
 import { mixHex } from '../../engine/materials/palette.js';
 
-/** Build the voxel fruit as two halves (split along x with a jagged seam). Returns { root, halves, radius, voxel }. */
+/** Build the voxel fruit as two halves (left/right, jagged seam) hinged at the back so it opens like a book toward
+ *  the viewer, both seed-filled faces turning to camera. Returns { root, halves: [left, right], radius, voxel }. */
 export function anorModel({ size = 8, seed = 1, skin = '#a50f26', dark = '#6f0a1b', blush = '#e0704f', crown = '#5e1a12', aril = '#e3173d', pith = '#f2dcb4' } = {}) {
   const N = 13, R = N / 2, voxel = size / N;
   const halves = [new VoxelGrid(), new VoxelGrid()], whole = new VoxelGrid();
@@ -46,16 +47,16 @@ export function anorModel({ size = 8, seed = 1, skin = '#a50f26', dark = '#6f0a1
     }
     if (color === null) continue;
     const seam = Math.round(noise3(0, py * 0.45, pz * 0.45, seed + 5) * 1.2);
-    halves[x < seam ? 0 : 1].set(x, y, z, color, tag);
+    halves[x < seam ? 0 : 1].set(x, y, z, color, tag); // left half / right half
     whole.set(x, y, z, color, tag);
   }
   const root = new THREE.Group();
   const pivotY = 0; // hinge at the bottom of the fruit
   const parts = halves.map((g) => {
-    const b = buildVoxels(g, { size: voxel, origin: [0, pivotY - 0.5, 0], seed, aoGrid: whole, materials: { glow: { emissive: 0.9 }, gloss: { material: { roughness: 0.42 } } } });
+    const b = buildVoxels(g, { size: voxel, origin: [0, pivotY - 0.5, 0], seed, aoGrid: whole, materials: { glow: { emissive: 2.0 }, gloss: { material: { roughness: 0.42 } } } });
     const hinge = new THREE.Group();
-    hinge.position.y = -R * voxel; // halves hinge around the bottom point; parent is centred
-    b.root.position.y = 0;
+    hinge.position.z = -R * voxel; // hinge line runs vertically along the back of the fruit; parent is centred
+    b.root.position.set(0, -R * voxel, R * voxel);
     hinge.add(b.root);
     root.add(hinge);
     return hinge;
@@ -73,6 +74,8 @@ export const anor = definePart({
     spin.position.y = r;
     model.root.position.y = 0;
     spin.add(model.root); squashG.add(spin); rock.add(squashG); root.add(rock);
+    const glow = new THREE.PointLight('#ff2a46', 0, 22, 2); // the arils' ruby glow once it cracks open
+    glow.position.y = r * 0.3; spin.add(glow);
     const motion = ctx.motion({ radius: r, lift: 0, turnRate: 0 });
     const clips = new ClipSet();
         const land = (t, h, api) => {
@@ -89,8 +92,8 @@ export const anor = definePart({
         motion.arc(t, api.point(to), { dur, apex, bounces, restitution: 0.38 });
       },
       hop(t, { to, dur = 0.5, apex = 6 } = {}, api) { motion.arc(t, api.point(to), { dur, apex }); },
-      roll(t, { path = [], speed, dur, ease, ramp } = {}, api) {
-        motion.path(t, path.map((p) => api.point(p)), speed ? { speed, ramp } : { dur: dur ?? 2, ease: ease || 'inOutSine' });
+      roll(t, { path = [], speed, dur, ease, ramp, keys } = {}, api) {
+        motion.path(t, path.map((p) => api.point(p)), keys ? { keys } : speed ? { speed, ramp } : { dur: dur ?? 2, ease: ease || 'inOutSine' });
       },
       carry(t, { by = 'hero', anchor = 'hands', blend = 0.18 } = {}, api) {
         const carrier = api.actor(by);
@@ -98,13 +101,13 @@ export const anor = definePart({
         clips.add({ t0: t, dur: 0.5, hold: true, fadeIn: 0.45, name: 'upright', fn: () => ({ upright: 1 }) });
       },
       place(t, { to, dur = 0.4, apex = 3 } = {}, api) { motion.arc(t, api.point(to), { dur, apex }); },
-      crack(t, { count = 70, burst = true, open = 0.62, speed = [45, 150] } = {}, api) {
+      crack(t, { count = 110, burst = true, open = 0.62, speed = [35, 95] } = {}, api) {
         clips.add({ t0: t, dur: 0.6, hold: true, fadeIn: 0.001, name: 'crack', fn: (u) => ({ open: E.outBack(u) * open }) });
         clips.add({ t0: t - 0.25, dur: 0.25, fadeIn: 0.02, fadeOut: 0.02, fn: (u, tl) => ({ shake: Math.sin(tl * 90) * 0.04 * u }) });
         api.sfx(t, 'crack', {}); api.sfx(t + 0.02, 'burst', {});
         if (burst) {
           const at = api.point(api.self + '.center', t);
-          api.fx('burst', { t0: t + 0.03, at: () => at().add(new THREE.Vector3(0, r * 0.6, 0)), count, speed, up: 0.85, gravity: 520, floor: 'surface', life: 6, size: 0.42, colors: ['#e3173d', '#ff3355', '#c50f2f', '#ff6b81'], emissive: 1.4, seed: 21 });
+          api.fx('burst', { t0: t + 0.03, at: () => at().add(new THREE.Vector3(0, r * 0.6, 0)), count, speed, up: 0.85, gravity: 900, floor: 'surface', life: 6, size: 0.55, colors: ['#d0102e', '#e8203f', '#b00d28', '#ff3a5a'], emissive: 1.5, seed: 21 });
           api.fx('sparkles', { t0: t + 0.05, t1: t + 2.2, at: () => at().add(new THREE.Vector3(0, r * 2.5, 0)), radius: 9, count: 28, size: 1.8 });
         }
       },
@@ -119,7 +122,22 @@ export const anor = definePart({
         const s = motion.sample(t);
         return s.pos.clone().add(new THREE.Vector3(0, name === 'top' ? 2 * r + 0.8 : r, 0));
       },
-      compile({ timeline }) {
+      compile({ timeline, obstacles = [] }) {
+        // bump over low obstacles while rolling
+        for (const ob of obstacles) {
+          const box = ob.box.clone().expandByVector(new THREE.Vector3(r * 0.5, 0, r * 0.5)), h = ob.box.max.y - ob.box.min.y;
+          let inside = -1;
+          for (let t = 0; t <= ctx.duration; t += 1 / 120) {
+            const s = motion.sample(t), hit = !s.carried && box.containsPoint(new THREE.Vector3(s.pos.x, box.min.y, s.pos.z));
+            if (hit && inside < 0) inside = t;
+            if (!hit && inside >= 0) {
+              const t0 = inside, dur = Math.max(0.12, t - inside);
+              clips.add({ t0, dur, fadeIn: 0.001, fadeOut: 0.001, fn: (u) => ({ lift: (h + 0.3) * Math.sin(Math.PI * u) }) });
+              timeline.sfx.push({ t: t0, name: 'pop', params: { gain: 0.35, pitch: 0.6 }, from: ctx.name }, { t: t0 + dur, name: 'thud', params: { gain: 0.35, pitch: 1.4 }, from: ctx.name });
+              inside = -1;
+            }
+          }
+        }
         for (const e of motion.events) if (e.type === 'land') land(e.t, e.height ?? 4, { sfx: (tt, n, p) => timeline.sfx.push({ t: tt, name: n, params: p, from: ctx.name }) });
         // rolling rumble: sample real ground speed while rolling on the surface
         const samples = []; const step = 1 / 30;
@@ -130,16 +148,17 @@ export const anor = definePart({
       },
       update(t) {
         const s = motion.sample(t);
-        const pose = clips.evaluate(t, { squash: 0, rockX: 0, rockZ: 0, open: 0, upright: 0, shake: 0 });
-        root.position.copy(s.pos);
+        const pose = clips.evaluate(t, { squash: 0, rockX: 0, rockZ: 0, open: 0, upright: 0, shake: 0, lift: 0 });
+        root.position.copy(s.pos); root.position.y += pose.lift;
         rock.rotation.set(pose.rockX, 0, pose.rockZ);
         const sy = 1 + pose.squash, k = 1 / Math.sqrt(Math.max(sy, 0.2));
         squashG.scale.set(k, sy, k);
         q.copy(s.quat).slerp(qUp.identity(), clamp(pose.upright));
         spin.quaternion.copy(q);
         spin.position.x = pose.shake * r;
-        model.halves[0].rotation.z = pose.open;
-        model.halves[1].rotation.z = -pose.open;
+        model.halves[0].rotation.y = -pose.open * 1.25;
+        model.halves[1].rotation.y = pose.open * 1.25;
+        glow.intensity = 22 * clamp(pose.open / 0.5) * (0.85 + 0.15 * Math.sin(t * 9));
       },
     };
   },

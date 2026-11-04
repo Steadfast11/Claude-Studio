@@ -6,7 +6,7 @@
 // Locomotion is track-driven: actions only give positions over time (walk/run/sprint/chase/hop/leap...).
 // The rig faces the direction of travel (smoothed), picks idle/walk/run/sprint from speed, generates the gait
 // (feet, bob, lean into acceleration, banking in turns, arm swing) and emits footstep events for the audio.
-// One-shot actions are ClipSet layers: squash & stretch (volume-preserving), anticipation, overshoot/settle,
+// Low props flagged `obstacle` are hopped over automatically (see compile). One-shot actions are ClipSet layers: squash & stretch (volume-preserving), anticipation, overshoot/settle,
 // secondary motion on the accessory. Everything is a pure function of t (gait phase is baked from t = 0).
 import * as THREE from 'three';
 import { buildVoxels } from '../../engine/voxel/build.js';
@@ -303,9 +303,13 @@ export function createCreature(design, o, ctx) {
       add({ t0: t, dur: n * 0.18 + 0.2, fadeIn: 0.05, fadeOut: 0.1, fn: (u, tl) => ({ squash: Math.max(0, Math.sin(tl * TAU * 5.5)) * 0.05, lean: 0.06, face: 'closed', mouth: 'small', lookY: 0.4 }) });
       api.sfx(t, 'sniff', { count: n, ...voice });
     },
+    hug(t, p, api) {
+      const end = until(t, { hold: true, ...p }, api, 1);
+      add({ t0: t, dur: end - t, fadeIn: 0.25, fadeOut: 0.2, fn: () => ({ handL: [-0.6, -0.9, 3.4], handR: [-0.6, -0.9, 3.4] }) });
+    },
     catch(t, p, api) {
       const end = until(t, { hold: true, ...p }, api, 1);
-      add({ t0: t - 0.15, dur: end - t + 0.15, fadeIn: 0.12, fadeOut: 0.15, fn: (u, tl) => ({ handL: [-1.0, 0.6, 2.4], handR: [-1.0, 0.6, 2.4], lean: tl < 0.4 ? 0.2 * Math.sin(tl / 0.4 * Math.PI) : 0, face: tl < 0.35 ? 'determined' : 'normal' }) });
+      add({ t0: t - 0.15, dur: end - t + 0.15, fadeIn: 0.12, fadeOut: 0.15, fn: (u, tl) => ({ handL: [-0.6, -0.9, 3.4], handR: [-0.6, -0.9, 3.4], lean: tl < 0.4 ? 0.2 * Math.sin(tl / 0.4 * Math.PI) : 0, face: tl < 0.35 ? 'determined' : 'normal' }) });
       landSquash(t, 0.45);
       api.sfx(t, 'catch', {});
     },
@@ -316,7 +320,7 @@ export function createCreature(design, o, ctx) {
     lift(t, p, api) {
       const end = until(t, { hold: true, ...p }, api, 1.5);
       const up = p.height ?? H * 0.9;
-      add({ t0: t, dur: end - t, fadeIn: 0.08, fadeOut: 0.2, fn: (u, tl) => { const k = E.outBack(clamp(tl / (p.rise ?? 0.55))); return { handL: [-1.1, 0.6 + up * k, 2.4 - 1.8 * k], handR: [-1.1, 0.6 + up * k, 2.4 - 1.8 * k], squash: 0.08 * k - 0.1 * (1 - clamp(tl / 0.15)), face: 'happy', mouth: 'grin', lookY: 0.6 * k }; } });
+      add({ t0: t, dur: end - t, fadeIn: 0.08, fadeOut: 0.2, fn: (u, tl) => { const k = E.outBack(clamp(tl / (p.rise ?? 0.55))); return { handL: [-0.6 - 0.5 * k, -0.9 + (up + 0.9) * k, 3.4 - 3.0 * k], handR: [-0.6 - 0.5 * k, -0.9 + (up + 0.9) * k, 3.4 - 3.0 * k], squash: 0.08 * k - 0.1 * (1 - clamp(tl / 0.15)), face: 'happy', mouth: 'grin', lookY: 0.6 * k }; } });
       impulses.push({ t: t + 0.2, amp: -0.3, side: 1 });
       api.sfx(t, 'lift', voice);
     },
@@ -333,6 +337,14 @@ export function createCreature(design, o, ctx) {
       const dur = p.dur ?? 1.3;
       add({ t0: t, dur, fadeIn: 0.12, fadeOut: 0.2, fn: (u, tl) => ({ handR: [-W / 2 + 0.2, eyeY - design.handY * H - 1.4, D * 0.5 + 0.6], face: tl > 0.25 ? 'happy' : 'normal', mouth: tl > 0.25 ? 'chew' : 'o', squash: tl > 0.25 ? Math.sin(tl * TAU * 4) * 0.02 : 0 }) });
       for (let k = 0; k < 3; k++) api.sfx(t + 0.3 + k * 0.25, 'munch', voice);
+    },
+    snap(t, p, api) { // snatch something falling out of the air with the mouth (hands stay busy), then chew
+      const dur = p.dur ?? 1.2;
+      add({ t0: t, dur, fadeIn: 0.06, fadeOut: 0.2, fn: (u, tl) => ({
+        lookY: tl < 0.3 ? 0.9 : 0.2, lean: tl < 0.3 ? -0.12 : 0.04, jump: tl < 0.3 ? 1.4 * Math.sin((tl / 0.3) * Math.PI) : 0,
+        face: tl < 0.18 ? 'wide' : 'happy', mouth: tl < 0.2 ? 'o' : 'chew', squash: tl > 0.3 ? Math.sin(tl * TAU * 4) * 0.025 : 0 }) });
+      api.sfx(t + 0.2, 'pop', { gain: 0.5, pitch: 1.4 });
+      for (let k = 0; k < 3; k++) api.sfx(t + 0.38 + k * 0.22, 'munch', voice);
     },
     blush: (t, p) => add({ t0: t, dur: p.dur ?? 1.5, fadeIn: 0.3, fadeOut: 0.4, hold: !!p.hold, fn: () => ({ blush: 1, face: 'happy', mouth: 'smile' }) }),
     laugh(t, p, api) {
@@ -366,7 +378,26 @@ export function createCreature(design, o, ctx) {
       apply(t);
       return A[name].getWorldPosition(new THREE.Vector3());
     },
-    compile({ timeline, duration }) {
+    compile({ timeline, duration, obstacles = [] }) {
+      // hop over low obstacles crossed while walking/running (anticipation, stretch, landing, sounds)
+      const jumps = [];
+      const reach = Math.max(W, D) * 0.45;
+      for (const ob of obstacles) {
+        const box = ob.box.clone().expandByVector(new THREE.Vector3(reach, 0, reach));
+        let inside = -1;
+        for (let t = 0; t <= duration; t += 1 / 120) {
+          const s = motion.sample(t), hit = !s.airborne && !s.carried && box.containsPoint(new THREE.Vector3(s.pos.x, box.min.y, s.pos.z)) && s.speed > 3;
+          if (hit && inside < 0) inside = t;
+          if (!hit && inside >= 0) { jumps.push({ t0: inside, t1: t, h: ob.box.max.y - ob.box.min.y + 1.8 }); inside = -1; }
+        }
+      }
+      for (const j of jumps) {
+        const t0 = j.t0 - 0.06, dur = Math.max(0.3, j.t1 - j.t0 + 0.12);
+        anticipation(t0, 0.12, 0.09);
+        add({ t0, dur, fadeIn: 0.001, fadeOut: 0.001, fn: (u) => ({ jump: 4 * j.h * u * (1 - u), squash: 0.14 * Math.cos(u * Math.PI), footL: [0, 0.8, 0.4], footR: [0, 0.8, 0.4], handL: [0, 1.4, 0], handR: [0, 1.4, 0] }) });
+        landSquash(t0 + dur, 0.6);
+        timeline.sfx.push({ t: t0, name: 'hop', params: { ...voice, gain: 0.8 }, from: ctx.name }, { t: t0 + dur, name: 'land', params: { gain: 0.5 }, from: ctx.name });
+      }
       // auto blinks every 2–4.5 s (skipped while another face is showing)
       const r = rng(seed + 5);
       for (let t = r.range(0.6, 2); t < duration; t += r.range(2, 4.5)) if (!clips.evaluate(t, {}).face) blinks.push(t);
@@ -374,8 +405,8 @@ export function createCreature(design, o, ctx) {
       gaitEnsure(duration);
       for (let i = 1; i < G.n; i++) {
         const a = G.phase[i - 1], b = G.phase[i];
-        if (Math.floor(b) > Math.floor(a) && G.speed[i] > 2) {
-          const t = i * G.dt;
+        const t = i * G.dt;
+        if (Math.floor(b) > Math.floor(a) && G.speed[i] > 2 && !jumps.some((j) => t > j.t0 - 0.08 && t < j.t1 + 0.1)) {
           timeline.events.push({ t, type: 'step', actor: ctx.name, foot: Math.floor(b) % 2 ? 'L' : 'R', speed: G.speed[i] });
           timeline.sfx.push({ t, name: 'step', params: { speed: G.speed[i], size: design.stepSize ?? 1, surface: o.surface || 'cloth', foot: Math.floor(b) % 2 }, from: ctx.name });
         }

@@ -1,5 +1,6 @@
 // engine/player.js — preview page + render host. Loaded by index.html.
 // URL params: film=<name> (films/<name>/film.js) | part=<name> (part demo) · render (no UI, no realtime loop)
+//             view=<name> (replace all shots by one static camera view, e.g. view=plan for a top-down layout check)
 //             scale=0.5 (resolution multiplier of 1920×1080) · quality=draft|preview|final · t=<seconds>
 // Exposes: window.seek(t), window.DURATION, window.FPS, window.renderAudio() → base64 WAV, window.READY,
 //          window.FILM_INFO { name, shots, markers, renderer }.
@@ -28,7 +29,7 @@ async function main() {
   const canvas = document.getElementById('view');
   canvas.width = W; canvas.height = H;
   const { renderer, quality: q } = createRenderer({ canvas, width: W, height: H, quality });
-  const stage = await createStage(desc, { renderer, quality: q, width: W, height: H });
+  const stage = await createStage(desc, { renderer, quality: q, width: W, height: H, view: P.get('view') });
   window.STAGE = stage;
   window.DURATION = stage.duration;
   window.FPS = stage.fps;

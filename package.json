@@ -11,7 +11,8 @@
     "dev": "node tools/serve.mjs",
     "stills": "node tools/stills.mjs",
     "render": "node tools/render.mjs",
-    "parts-doc": "node tools/parts-doc.mjs"
+    "parts-doc": "node tools/parts-doc.mjs",
+    "probe": "node tools/probe.mjs"
   },
   "dependencies": {
     "@fontsource/nunito": "5.2.7",

@@ -30,7 +30,7 @@ export const piyola = definePart({
     pivot.add(content); holder.add(pivot);
     const root = new THREE.Group(); root.add(holder);
     const rock = rockable(ctx, pivot, { sound: 'ceramic-ring', radius: R * 0.4, pitch: 1.5 * (9 / o.diameter) });
-    if (o.steam && o.tea) ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(0, teaY + 0.3, 0)), rate: 8, life: 2.2, rise: 5.5, spread: R * 0.9, size: [1.0, 4.5], opacity: 0.1, seed: ctx.seed });
+    if (o.steam && o.tea) ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(0, teaY + 0.3, 0)), rate: 9, life: 2.4, rise: 5.5, spread: R * 0.9, size: [1.2, 5.5], opacity: 0.16, seed: ctx.seed });
     return {
       root,
       anchors: { rim: new THREE.Vector3(0, H, R), front: new THREE.Vector3(0, 0, R + 1.5), side: new THREE.Vector3(R + 1.5, 0, 0), tea: new THREE.Vector3(0, teaY, 0) },

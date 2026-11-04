@@ -27,7 +27,7 @@ export async function launch() {
   }
 }
 
-export async function openFilm({ film, part, scale = 1, quality = 'final', browser, server, verbose = true, timeout = 600000 }) {
+export async function openFilm({ film, part, scale = 1, quality = 'final', browser, server, verbose = true, timeout = 600000, view }) {
   const srv = server || (await startServer(0));
   const br = browser || (await launch());
   const W = Math.round(1920 * scale), H = Math.round(1080 * scale);
@@ -35,7 +35,7 @@ export async function openFilm({ film, part, scale = 1, quality = 'final', brows
   page.setDefaultTimeout(timeout);
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console.log(`[page ${m.type()}]`, m.text()); });
   page.on('pageerror', (e) => console.log('[page error]', e.message));
-  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? { film } : { part }) });
+  const q = new URLSearchParams({ render: '', scale: String(scale), quality, ...(film ? { film } : { part }), ...(view ? { view } : {}) });
   await page.goto(`http://127.0.0.1:${srv.port}/index.html?${q}`);
   await page.waitForFunction(() => window.READY || window.ERROR, null, { timeout });
   const err = await page.evaluate(() => window.ERROR);

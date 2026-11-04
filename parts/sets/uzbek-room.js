@@ -2,7 +2,7 @@
 // xontaxta table under a dasturxon, ikat kurpachas and cushions, thick plaster walls with a carved ganch frieze,
 // arched niches holding ceramics, a suzani hanging, and an arched window with a girih lattice (it casts patterned
 // light) looking out on a painted Samarkand skyline — turquoise domes and minarets against the setting sun.
-//   uzbekRoom({ table: [110, 72], cloth: '#b3122e', sun: [15, 11], window: { width: 72, sill: 6, top: 104 } })
+//   uzbekRoom({ table: [110, 72], cloth: '#b3122e', sun: [14, 8] /* azimuth°, elevation° */, window: { width: 74, sill: 6, top: 108 } })
 // Table-top surface is y = 0. Exposes surface(x, z), views, and info { window, interior, table, sun } for lights.
 import * as THREE from 'three';
 import { definePart } from '../../engine/core/registry.js';
@@ -73,10 +73,17 @@ function skylineTexture({ sunUV, seed, colors }) {
     portal(w * 0.62, base, 70, 170); minaret(w * 0.62 - 95, base, 230, 13); minaret(w * 0.62 + 95, base, 230, 13);
     dome(w * 0.8, base - 30, 120, 150); portal(w * 0.8 - 160, base, 50, 150);
     for (let i = 0; i < 9; i++) dome(r.range(0, w), base - r.range(0, 20), r.range(25, 45), r.range(30, 55), false);
-    // low city mass
+    // low city mass fading into dusk, with a scatter of warm lit windows
     g.fillStyle = '#3a2a48';
     for (let x = 0; x < w; x += r.range(30, 80)) g.fillRect(x, base - r.range(10, 45), r.range(40, 110), 60);
-    g.fillRect(0, base, w, h - base);
+    const city = g.createLinearGradient(0, base, 0, h);
+    city.addColorStop(0, '#47304f'); city.addColorStop(0.35, '#2f2038'); city.addColorStop(1, '#1d1424');
+    g.fillStyle = city; g.fillRect(0, base, w, h - base);
+    for (let i = 0; i < 260; i++) {
+      const y = base + Math.pow(r.next(), 1.6) * (h - base) * 0.8, s = 2 + (y - base) / 60;
+      g.fillStyle = `rgba(255,${Math.round(r.range(170, 215))},${Math.round(r.range(90, 140))},${r.range(0.45, 0.9)})`;
+      g.fillRect(r.range(0, w), y, s * 1.4, s);
+    }
   }, { key: `skyline${sunUV}${seed}${colors}`, wrap: THREE.ClampToEdgeWrapping });
 }
 
@@ -134,7 +141,7 @@ function suzaniTexture(seed) {
 export const uzbekRoom = definePart({
   name: 'uzbek-room', kind: 'set',
   options: {
-    table: [110, 72], cloth: '#b3122e', clothField: '#e9d3ad', wall: '#eadcc4', sun: [15, 11], seed: 5,
+    table: [110, 72], cloth: '#b3122e', clothField: '#dcc29a', wall: '#eadcc4', sun: [14, 8], seed: 5,
     window: { width: 74, sill: 6, top: 108, spring: 78 },
     sky: ['#3d3470', '#8a4a78', '#d86f6a', '#f6a25c', '#ffd08a'],
   },
@@ -208,14 +215,14 @@ export const uzbekRoom = definePart({
     const [az, el] = o.sun;
     const sunDir = new THREE.Vector3(-Math.sin(az * DEG) * Math.cos(el * DEG), Math.sin(el * DEG), -Math.cos(az * DEG) * Math.cos(el * DEG)).normalize();
     const winC = new THREE.Vector3(0, (win.sill + win.top) / 2, WALL_Z);
-    const SKY_Z = -640, SW = 1700, SH = 850, horizonY = 22, horizonV = 0.66, skyCY = horizonY + (horizonV - 0.5) * SH;
+    const SKY_Z = -640, SW = 1700, SH = 850, horizonY = 40, horizonV = 0.66, skyCY = horizonY + (horizonV - 0.5) * SH;
     const sunHit = winC.clone().addScaledVector(sunDir, (WALL_Z - SKY_Z) / -sunDir.z);
     const sunUV = [(sunHit.x + SW / 2) / SW, 1 - ((sunHit.y - (skyCY - SH / 2)) / SH)];
     const skyMat = new THREE.MeshBasicMaterial({ map: skylineTexture({ sunUV, seed: o.seed, colors: o.sky }) });
-    skyMat.color.setScalar(2.4);
+    skyMat.color.setScalar(1.35);
     const sky = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), skyMat); sky.position.set(0, skyCY, SKY_Z); root.add(sky);
-    const nearMat = new THREE.MeshBasicMaterial({ map: nearLayerTexture(o.seed), transparent: true }); nearMat.color.setScalar(1.6);
-    const near = new THREE.Mesh(new THREE.PlaneGeometry(900, 225), nearMat); near.position.set(0, -60, -300); root.add(near);
+    const nearMat = new THREE.MeshBasicMaterial({ map: nearLayerTexture(o.seed), transparent: true }); nearMat.color.setScalar(1.0);
+    const near = new THREE.Mesh(new THREE.PlaneGeometry(900, 225), nearMat); near.position.set(0, -45, -300); root.add(near);
 
     const surface = (x, z) => (Math.abs(x) <= TW / 2 && Math.abs(z) <= TD / 2 ? 0 : Math.abs(x) < 125 && z > -62 && z < 130 ? TAP : FLOOR);
     return {

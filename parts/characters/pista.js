@@ -2,7 +2,7 @@
 // (four-cornered skullcap with white pepper-pod motifs). Built on the generic creature rig (_rig.js).
 //   pista({ color: '#4fb8a8', belly: '#a6e6d3', doppi: true, scale: 1, surface: 'cloth' })
 // Actions (see _rig.js): walk run sprint chase stop turn look face blink smile gasp anticipate jump hop leap land
-// skid bonk shake peek sniff catch push lift cheer wave eat blush laugh sit balance.
+// skid bonk shake peek sniff catch hug push lift cheer wave eat snap blush laugh sit balance. Hops obstacles by itself.
 // Anchors: center, head, face, top, feet, hands (+ auto front/back/left/right).
 import { definePart } from '../../engine/core/registry.js';
 import { VoxelGrid } from '../../engine/voxel/voxel.js';

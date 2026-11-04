@@ -39,9 +39,15 @@ export function path(points, { tension = 0.5, closed = false } = {}) {
  *  { dur, ease }            → s = L·ease(τ/dur)
  *  { speed, ramp }          → constant speed with smooth start/stop ramps (seconds)
  *  { speed: [v0, v1] }      → linear acceleration from v0 to v1 (accelerating chase)
+ *  { keys: [[τ, f], ...] }  → distance fraction f at time τ, smooth monotone cubic between keys (first key [0, 0])
  * Returns { s(τ), dur } where τ is time since segment start.
  */
 export function profile(L, o = {}) {
+  if (o.keys) {
+    const m = monotone(o.keys);
+    const dur = o.keys[o.keys.length - 1][0];
+    return { dur, s: (tau) => L * Math.min(1, Math.max(0, m(tau))) };
+  }
   if (o.dur !== undefined && !o.speed) {
     const e = ease(o.ease || 'inOutSine');
     return { dur: o.dur, s: (tau) => L * e(Math.min(1, Math.max(0, tau / o.dur))) };
@@ -65,5 +71,27 @@ export function profile(L, o = {}) {
       if (tau > dur - r) { const q = dur - tau; return L - (v * q * q) / (2 * r); }
       return v * r / 2 + v * (tau - r);
     },
+  };
+}
+
+/** Monotone cubic (Fritsch–Carlson) interpolation through [[x, y], ...] (x increasing) — no overshoot, smooth slope,
+ *  zero slope at both ends. */
+export function monotone(pts) {
+  const n = pts.length, x = pts.map((p) => p[0]), y = pts.map((p) => p[1]);
+  const d = [], m = new Array(n).fill(0);
+  for (let i = 0; i < n - 1; i++) d.push((y[i + 1] - y[i]) / (x[i + 1] - x[i]));
+  // endpoints start and end at rest (zero slope); interior slopes average the neighbouring secants
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+    if (h > 9) { const k = 3 / Math.sqrt(h); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; }
+  }
+  return (t) => {
+    if (t <= x[0]) return y[0];
+    if (t >= x[n - 1]) return y[n - 1];
+    let i = 0; while (t > x[i + 1]) i++;
+    const h = x[i + 1] - x[i], u = (t - x[i]) / h, u2 = u * u, u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * y[i] + (u3 - 2 * u2 + u) * h * m[i] + (-2 * u3 + 3 * u2) * y[i + 1] + (u3 - u2) * h * m[i + 1];
   };
 }

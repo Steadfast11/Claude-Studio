@@ -3,6 +3,7 @@
 //   npm run stills -- --film anor --at 3.2,4.4,10.5      # specific times
 //   npm run stills -- --part piyola                      # one still of a part demo → renders/parts/piyola.png
 //   options: --scale 0.5 (default)  --quality preview|final|draft  --cols 3  --out file.png  --single (no sheet, one PNG per time)
+//            --view plan (top-down layout check: every still from the same camera)
 import fs from 'node:fs';
 import path from 'node:path';
 import { openFilm, grab, parseArgs } from './_browser.mjs';
@@ -11,7 +12,7 @@ const a = parseArgs();
 const scale = Number(a.scale || 0.5);
 const quality = a.quality || 'preview';
 const t0 = Date.now();
-const { page, info, close } = await openFilm({ film: a.film, part: a.part, scale, quality });
+const { page, info, close } = await openFilm({ film: a.film, part: a.part, scale, quality, view: a.view });
 
 let times;
 if (a.part && !a.at) times = [Number(a.t || info.duration * 0.6)];
@@ -53,7 +54,7 @@ if (a.single || shots.length === 1) {
     });
     return c.toDataURL('image/png').split(',')[1];
   }, [shots.map(({ t, png }) => ({ b64: png.toString('base64'), label: `t=${t.toFixed(2)}s  f${Math.round(t * info.fps)}  shot ${1 + info.shots.findIndex((s) => t >= s.t0 && t < s.t1)}` })), cols, `${name} — ${info.size.join('×')} ${info.quality}`]);
-  const out = a.out || path.join(outDir, `${name}-sheet.png`);
+  const out = a.out || path.join(outDir, `${name}${a.view ? '-' + a.view : ''}-sheet.png`);
   fs.writeFileSync(out, Buffer.from(sheet, 'base64'));
   console.log('wrote', out);
 }

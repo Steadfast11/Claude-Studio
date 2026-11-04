@@ -1,6 +1,6 @@
 // parts/props/qoshiq.js — a spoon lying on the table (metal or wood): shallow oval bowl + tapered handle.
 //   qoshiq({ length: 14, material: 'silver' | 'wood' })
-// Anchors: bowl, handle, over (a point just above the middle — handy for hop arcs).
+// Anchors: bowl, handle, over. It is an obstacle: characters hop over it, rolling props bump over it.
 import * as THREE from 'three';
 import { definePart } from '../../engine/core/registry.js';
 import { woodTexture } from '../../engine/materials/procedural-textures.js';
@@ -30,7 +30,7 @@ export const qoshiq = definePart({
     handle.position.set(0, 0.2 * k, 0.2 * k);
     const root = new THREE.Group(); root.add(bowl, handle);
     root.traverse((m) => { if (m.isMesh) m.castShadow = m.receiveShadow = true; });
-    return { root, anchors: { bowl: new THREE.Vector3(0, 0.8 * k, -2.6 * k), handle: new THREE.Vector3(0, 0.5 * k, 6 * k), over: new THREE.Vector3(0, 3 * k, 1.5 * k) } };
+    return { root, obstacle: true, anchors: { bowl: new THREE.Vector3(0, 0.8 * k, -2.6 * k), handle: new THREE.Vector3(0, 0.5 * k, 6 * k), over: new THREE.Vector3(0, 3 * k, 1.5 * k) } };
   },
   demo: { radius: 26, height: 12 },
 });

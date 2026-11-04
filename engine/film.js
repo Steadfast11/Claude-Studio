@@ -2,10 +2,12 @@
 //   export default film({ title, duration, fps, seed, set, light, props, cast, views, shots: [shot(...)],
 //                         action: [at(...)], music: [music(...)], sfx: [sfx(...)], post, markers,
 //                         titleCard: { t0, text, sub, credit } });
-//   shot(t0, t1, { rig, from, to, at, lens, focus, fstop, handheld, grade })   camera (see engine/camera/rigs.js)
+//   shot(t0, t1, { rig, from, to, at, lens, focus, fstop, handheld, grade, shafts })   camera (engine/camera/rigs.js);
+//                                         grade / shafts are per-shot overrides of the light rig's look
 //   at(t, 'actor.verb', params)                                                any part action, or 'fx.<emitter>'
 //   sfx(t, 'name', params)                                                      one-shot sound (engine/audio/sfx.js)
 //   music(t, cueSpec, { gain })                                                 a music cue starting at t
+//   post: { letterbox, fade, exposure: number | [[t, v], ...] keyframes, dofScale (default 0.4), grade: {...} }
 // The same film object drives both the picture (stage.js) and the soundtrack (audio/soundtrack.js).
 
 export function film(d) {

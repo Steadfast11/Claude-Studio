@@ -92,10 +92,10 @@ export function textPlane(str, { font = 'VS Serif', weight = 700, px = 120, colo
 }
 
 /**
- * Title card overlay: voxel letters fly in (staggered, overshoot, spin), a glint sweeps across, then subtitle and
- * credit fade up. Returns { scene, camera, update(t), t0 }.
+ * Title card overlay: voxel letters rise into place column by column (staggered, overshoot, a little spin), a glint
+ * sweeps across, then subtitle and credit fade up. Returns { scene, camera, update(t), t0 }.
  */
-export function titleCard({ t0 = 0, text = 'TITLE', sub = '', credit = '', color = '#c8102e', edge = '#f2c14e', y = 0.12, size = 0.06, seed = 3, depth = 2, subFont = 'VS Serif', creditFont = 'VS Sans', fly = 1.1, stagger = 0.045 } = {}) {
+export function titleCard({ t0 = 0, text = 'TITLE', sub = '', credit = '', color = '#c8102e', edge = '#f2c14e', y = 0.18, size = 0.03, seed = 3, depth = 2, subFont = 'VS Serif', creditFont = 'VS Sans', fly = 0.9, stagger = 0.035 } = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(20, 16 / 9, 0.1, 100);
   camera.position.set(0, 0, 10);
@@ -106,13 +106,13 @@ export function titleCard({ t0 = 0, text = 'TITLE', sub = '', credit = '', color
   const H = 2 * 10 * Math.tan((20 * Math.PI) / 360); // visible height at z=0
   const cell = H * size;
   const mat = new THREE.MeshStandardMaterial({ roughness: 0.32, metalness: 0.15 });
-  const mesh = new THREE.InstancedMesh(chamferBox(0.14), mat, vox.length);
+  const mesh = new THREE.InstancedMesh(chamferBox(0.09), mat, vox.length);
   mesh.frustumCulled = false;
   const base = new THREE.Color(color), rimC = new THREE.Color(edge), cc = new THREE.Color();
   scene.add(mesh);
   const lines = [];
-  if (sub) { const p = textPlane(sub, { font: subFont, weight: 400, height: H * 0.075, color: '#f3e3c4' }); p.position.y = H * (y - 0.13); scene.add(p); lines.push({ m: p, at: t0 + fly + 0.35 }); }
-  if (credit) { const p = textPlane(credit, { font: creditFont, weight: 400, height: H * 0.032, color: '#e9d8b8', letterSpacing: 6 }); p.position.y = H * (y - 0.21); scene.add(p); lines.push({ m: p, at: t0 + fly + 0.8 }); }
+  if (sub) { const p = textPlane(sub, { font: subFont, weight: 400, height: H * 0.065, color: '#f6e9cf' }); p.position.y = H * (y - 0.165); scene.add(p); lines.push({ m: p, at: t0 + fly + 0.45 }); }
+  if (credit) { const p = textPlane(credit, { font: creditFont, weight: 400, height: H * 0.028, color: '#e9d8b8', letterSpacing: 6 }); p.position.y = H * (y - 0.225); scene.add(p); lines.push({ m: p, at: t0 + fly + 0.9 }); }
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), Eu = new THREE.Euler(), P = new THREE.Vector3(), S = new THREE.Vector3();
   const maxX = Math.max(...vox.map((v) => v.x));
   return {
@@ -120,14 +120,14 @@ export function titleCard({ t0 = 0, text = 'TITLE', sub = '', credit = '', color
     update(t) {
       vox.forEach((v, i) => {
         const h1 = hash(i, seed, 1), h2 = hash(i, seed, 2), h3 = hash(i, seed, 3);
-        const start = t0 + (v.x + maxX) * stagger * 0.5 + h1 * 0.25;
-        const u = clamp((t - start) / (fly * (0.6 + 0.3 * h2)));
+        const start = t0 + (v.x + maxX) * stagger + (3 - v.y) * 0.02 + h1 * 0.08;
+        const u = clamp((t - start) / (fly * (0.75 + 0.25 * h2)));
         const k = E.outBack(u);
-        const from = P.set((h1 - 0.5) * 30, (h2 - 0.2) * 14, 4 + h3 * 4);
         const target = new THREE.Vector3(v.x * cell, v.y * cell + H * y, v.z * cell);
+        const from = P.set(target.x + (h1 - 0.5) * 3 * cell, target.y - (5 + h2 * 5) * cell, target.z + (1 + h3 * 3) * cell);
         P.lerpVectors(from, target, k);
-        Eu.set((1 - k) * (h1 - 0.5) * 9, (1 - k) * (h2 - 0.5) * 9, (1 - k) * (h3 - 0.5) * 6);
-        const s = u > 0 ? cell * Math.min(1, u * 3) : 1e-5;
+        Eu.set((1 - k) * (h1 - 0.5) * 4, (1 - k) * (h2 - 0.5) * 4, (1 - k) * (h3 - 0.5) * 3);
+        const s = u > 0 ? cell * Math.min(1, E.outCubic(u * 2)) : 1e-5;
         M.compose(P, Q.setFromEuler(Eu), S.setScalar(s));
         mesh.setMatrixAt(i, M);
         // glint sweep after assembly; front face = base colour, back layer = gold edge

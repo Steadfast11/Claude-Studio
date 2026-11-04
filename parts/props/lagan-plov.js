@@ -72,8 +72,8 @@ export const laganPlov = definePart({
     const garlic = new THREE.Mesh(gg, new THREE.MeshStandardMaterial({ color: '#efe2cf', roughness: 0.5 }));
     garlic.position.set(0, base + Hm - 0.6, 0); garlic.castShadow = true; root.add(garlic);
     if (o.steam) {
-      ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(-3, base + Hm, 2)), rate: 9, life: 2.8, rise: 8, spread: 6, size: [2, 8], opacity: 0.1, seed: ctx.seed });
-      ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(4, base + Hm * 0.7, -3)), rate: 7, life: 2.6, rise: 7, spread: 5, size: [2, 7], opacity: 0.09, seed: ctx.seed + 1 });
+      ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(-3, base + Hm, 2)), rate: 10, life: 3, rise: 8, spread: 6, size: [2.5, 10], opacity: 0.16, seed: ctx.seed });
+      ctx.fx('steam', { at: () => root.localToWorld(new THREE.Vector3(4, base + Hm * 0.7, -3)), rate: 8, life: 2.8, rise: 7, spread: 5, size: [2.5, 9], opacity: 0.14, seed: ctx.seed + 1 });
     }
     return { root, anchors: { top: new THREE.Vector3(0, base + Hm + 3, 0), rim: new THREE.Vector3(0, 2.9, R), front: new THREE.Vector3(0, 0, R + 2), side: new THREE.Vector3(R + 2, 0, 0) } };
   },

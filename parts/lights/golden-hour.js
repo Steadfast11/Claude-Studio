@@ -25,8 +25,8 @@ export const goldenHour = definePart({
   name: 'golden-hour', kind: 'light',
   options: {
     sunAngle: 'auto', sunAzimuth: 'auto', sunColor: '#ffb066', sunIntensity: 5.5, shadowSoftness: 3,
-    fill: 0.55, fillSky: '#ffe2c4', fillGround: '#6b3f2a', skyBounce: 0.5, tableBounce: 0.35,
-    shafts: 1, shaftColor: '#ffbe7a', dust: 450, envStrength: 0.55, exposure: 1.0,
+    fill: 0.32, fillSky: '#ffe2c4', fillGround: '#6b3f2a', skyBounce: 0.4, tableBounce: 0.3,
+    shafts: 1, shaftColor: '#ffbe7a', dust: 450, envStrength: 0.4, exposure: 0.88,
   },
   build(o, ctx) {
     const root = new THREE.Group();
@@ -74,10 +74,10 @@ export const goldenHour = definePart({
         top: '#c7a688', horizon: '#d9a87a', bottom: '#4a2c1e', intensity: 0.9, strength: o.envStrength,
         panels: [{ dir: [win.normal.x, 0.35, win.normal.z], color: '#ffd29a', intensity: 7, size: 0.45 }, { dir: [-win.normal.x * 0.3 + 0.7, 0.6, -win.normal.z], color: '#ffe8cc', intensity: 1.2, size: 0.8 }],
       },
-      shafts: { color: o.shaftColor, density: 0.0028 * o.shafts, g: 0.62, noise: 0.55, box: [interior.min.toArray(), interior.max.toArray()] },
+      shafts: { color: o.shaftColor, density: 0.0012 * o.shafts, g: 0.4, noise: 0.75, box: [interior.min.toArray(), interior.max.toArray()] },
       ao: { intensity: 0.85, radius: 5 },
-      bloom: { strength: 0.22, radius: 0.15, threshold: 1.6 },
-      grade: { exposure: o.exposure, warmth: 0.14, saturation: 1.12, contrast: 1.06, vignette: 0.34, grain: 0.032 },
+      bloom: { strength: 0.2, radius: 0.2, threshold: 2.2 },
+      grade: { exposure: o.exposure, warmth: 0.12, saturation: 1.1, contrast: 1.12, vignette: 0.36, grain: 0.032, lift: [-0.012, -0.008, 0.0] },
     };
   },
 });
