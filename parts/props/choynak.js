@@ -59,6 +59,7 @@ export const choynak = definePart({
       anchors: { spout: spoutTip, lid: new THREE.Vector3(0, 15.4 * k, 0), handle: new THREE.Vector3(-10 * k, 7 * k, 0), side: new THREE.Vector3(0, 0, 9 * k), back: new THREE.Vector3(0, 0, -9 * k) },
       actions: rock.actions,
       update: (t) => rock.update(t),
+      compile({ timeline, duration }) { if (o.steam) timeline.sfx.push({ t: 0, name: 'steam', params: { dur: duration }, from: ctx.name }); },
     };
   },
   demo: { radius: 55, height: 18, rot: -30 },
