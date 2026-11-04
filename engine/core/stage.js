@@ -62,6 +62,7 @@ export async function createStage(desc, { renderer, quality, width = 1920, heigh
     if (spec.isVector3) return spec.clone();
     if (typeof spec === 'function') return spec(t).clone();
     if (Array.isArray(spec)) return spec.length === 2 ? new THREE.Vector3(spec[0], surface(spec[0], spec[1]), spec[1]) : new THREE.Vector3(...spec);
+    if (spec === 'camera') return camera.position.clone();
     if (typeof spec === 'string') {
       const [n, ...rest] = spec.split('.');
       const inst = instances.get(n);
@@ -159,6 +160,8 @@ export async function createStage(desc, { renderer, quality, width = 1920, heigh
       fx: addFx,
       /** time of the next action on the same target (default end of a continuous action) */
       next: () => actions.find((b) => b.t > a.t && b.what.split('.')[0] === target)?.t ?? desc.duration,
+      /** time of the next action on the same target whose verb is in `verbs` */
+      nextOf: (verbs) => actions.find((b) => b.t > a.t && b.what.split('.')[0] === target && verbs.includes(b.what.split('.')[1]))?.t ?? desc.duration,
     };
     if (target === 'fx') { addFx(verb, { t0: a.t, ...a.params }); continue; }
     const inst = instances.get(target);
@@ -203,11 +206,12 @@ export async function createStage(desc, { renderer, quality, width = 1920, heigh
   const toggles = { post: true, dof: true, ao: true, shafts: true };
 
   function seek(t) {
+    const shot = shotAt(t);
+    const c = shot ? shot.cam(t) : null;
+    if (c) camera.position.copy(c.pos); // parts may look at 'camera'
     for (const inst of instances.values()) inst.update?.(t, { camera, resolve });
     for (const e of fx) e.update(t);
-    const shot = shotAt(t);
-    if (shot) {
-      const c = shot.cam(t);
+    if (c) {
       camera.position.copy(c.pos);
       camera.up.set(0, 1, 0);
       camera.lookAt(c.look);

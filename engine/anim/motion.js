@@ -38,7 +38,7 @@ export class Motion {
   }
   /** Travel through points (Vector3 or () => Vector3; y is re-snapped to ground+lift unless opts.snap === false). timing: {dur, ease} | {speed, ramp} | {speed:[v0,v1]} */
   path(t0, points, opts = {}) { return this._add(t0, 'path', { points, ...opts }); }
-  /** Ballistic hop/leap/fall to `to` (Vector3, absolute). opts: { dur, apex, bounces, restitution } */
+  /** Ballistic hop/leap/fall to `to` (Vector3, absolute). opts: { dur, apex, bounces, restitution, timeEase(u) (e.g. slow-motion apex) } */
   arc(t0, to, opts = {}) { return this._add(t0, 'arc', { to, ...opts }); }
   /** Chase another Motion along its trail, `gap` cm behind (number or [g0, g1] over the segment). */
   follow(t0, target, opts = {}) { return this._add(t0, 'follow', { target, ...opts }); }
@@ -77,7 +77,7 @@ export class Motion {
         end: bt,
         air: (t) => t >= t0 && t < bt,
         pos: (t, out) => {
-          if (t < t0 + dur) return arcPoint(from, to, apex, Math.max(0, (t - t0) / dur), out);
+          if (t < t0 + dur) { const u = Math.max(0, (t - t0) / dur); return arcPoint(from, to, apex, o.timeEase ? o.timeEase(u) : u, out); }
           out.copy(to);
           for (const q of bounces) if (t >= q.t0 && t < q.t1) { const u = (t - q.t0) / (q.t1 - q.t0); out.y += 4 * q.h * u * (1 - u); }
           return out;

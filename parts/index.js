@@ -4,3 +4,4 @@ export * from './sets/studio.js';
 export * from './lights/golden-hour.js';
 export * from './props/anor.js';
 export * from './props/kosa.js';
+export * from './characters/pista.js';
