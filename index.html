@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- index.html — Voxel Studio player. ?film=<name> previews a film; ?part=<name> shows a part demo; ?render = headless render host. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voxel Studio</title>
+  <script type="importmap">
+    { "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+  </script>
+  <style>
+    :root { --bg: #14110f; --fg: #efe4d2; --mut: #a39886; --acc: #e0a84a; }
+    html, body { margin: 0; background: #000; color: var(--fg); font: 13px/1.4 system-ui, sans-serif; }
+    #view { display: block; }
+    body.ui { background: var(--bg); }
+    body.ui #view { width: min(100vw, calc((100vh - 120px) * 16 / 9)); height: auto; margin: 0 auto; }
+    #ui { display: none; padding: 8px 14px; }
+    body.ui #ui { display: block; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
+    #scrubwrap { position: relative; flex: 1; min-width: 200px; }
+    #scrub { width: 100%; }
+    #marks i { position: absolute; top: -4px; width: 2px; height: 8px; background: var(--acc); pointer-events: none; }
+    button { background: #2a241f; color: var(--fg); border: 1px solid #4a4038; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+    button:hover { border-color: var(--acc); }
+    #time { font-variant-numeric: tabular-nums; color: var(--mut); min-width: 260px; }
+    label { color: var(--mut); }
+    #safe { display: none; position: fixed; pointer-events: none; }
+    body.safe #view { outline: 1px solid #fff4; outline-offset: -5vh; }
+    .err { color: #f88; white-space: pre-wrap; padding: 12px; }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="ui">
+    <div class="row">
+      <button id="play" title="Space">▶</button>
+      <div id="scrubwrap"><input id="scrub" type="range" min="0" max="20" step="0.001" value="0" /><div id="marks"></div></div>
+      <span id="time"></span>
+    </div>
+    <div class="row" id="shots"></div>
+    <div class="row">
+      <label><input type="checkbox" id="sound" checked /> sound</label>
+      <label><input type="checkbox" id="tg-post" /> post</label>
+      <label><input type="checkbox" id="tg-dof" /> DOF</label>
+      <label><input type="checkbox" id="tg-ao" /> AO</label>
+      <label><input type="checkbox" id="tg-shafts" /> shafts</label>
+      <label><input type="checkbox" id="tg-wire" /> wireframe</label>
+      <label><input type="checkbox" id="tg-safe" /> safe frames</label>
+      <span style="color:var(--mut)">← → step a frame · Space play/pause · quality via ?quality=draft|preview|final</span>
+    </div>
+  </div>
+  <script type="module" src="./engine/player.js"></script>
+</body>
+</html>

@@ -4,13 +4,17 @@
   "private": true,
   "description": "A construction kit for code-drawn voxel short films: engine + parts library + film-script DSL + render pipeline.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node tools/serve.mjs",
     "stills": "node tools/stills.mjs",
     "render": "node tools/render.mjs"
   },
   "dependencies": {
+    "@fontsource/nunito": "5.2.7",
+    "@fontsource/playfair-display": "5.2.8",
     "playwright": "1.58.2",
     "three": "0.186.1"
   }
